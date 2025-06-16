@@ -1,21 +1,37 @@
 @import "tailwindcss"; 
 
 :root {
-  /* Primary Colors */
-  --warm-taupe: #8B7E66; /* Headers, buttons, key UI elements */
-  --soft-charcoal: #333333; /* Text, borders */
+  /* === Base Colors === */
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-gray-50: #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-300: #d1d5db;
+  --color-gray-600: #4b5563;
+  --color-gray-800: #1f2937;
 
-  /* Secondary Colors */
-  --muted-terracotta: #D76A4B; /* Accents, secondary buttons */
-  --cream-beige: #F5E9D6; /* Backgrounds, panels */
+  /* === Primary Theme (Red/Rose) === */
+  --primary: #f43f5e;          /* rose-500 */
+  --primary-hover: #e11d48;    /* rose-600 */
+  --primary-light: #ffe4e6;    /* rose-100 */
+  --primary-text: #be123c;     /* rose-700 */
 
-  /* Accent Colors */
-  --sage-green: #A8B5A2; /* Success messages, resolved status */
-  --soft-coral: #F28C82; /* Error messages, warnings */
-  --golden-ochre: #D4A017; /* Call-to-action, highlights */
+  /* === Backgrounds === */
+  --bg-main: #fff1f2;          /* rose-50 */
+  --bg-glass: rgba(255, 255, 255, 0.3); /* glassmorphism */
+  --bg-gradient-start: #ffe4e6; /* light rose */
+  --bg-gradient-mid: #ffffff;   /* white */
+  --bg-gradient-end: #fcd5ce;   /* warm light pink */
 
-  /* Dark Mode Colors */
-  --deep-slate: #2D2D2D; /* Dark mode background */
-  --light-beige: #E2D8C3; /* Dark mode text/secondary elements */
-  --dark-accent-terracotta: #D76A4B; /* Dark mode accent */
+  /* === Borders === */
+  --border-color: #d1d5db;     /* gray-300 */
+
+  /* === Text === */
+  --text-main: #1f2937;        /* gray-800 */
+  --text-muted: #4b5563;       /* gray-600 */
+  --text-heading: #be123c;     /* rose-700 */
+
+  /* === States === */
+  --success: #22c55e;          /* green-500 */
+  --danger: #ef4444;           /* red-500 */
 }
