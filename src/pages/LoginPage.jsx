@@ -28,7 +28,7 @@ const LoginPage = () => {
 
         // ✅ If login message contains "login successful" (case-insensitive)
         if (res.data.message?.toLowerCase().includes('login successful')) {
-          navigate("/admin/dashboard"); // 🚀 Redirect to dashboard
+          navigate("/homepage"); // 🚀 Redirect to dashboard
         } else {
           setLoginMessage('❌ Login failed. Please try again.');
         }
