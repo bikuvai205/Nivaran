@@ -1,4 +1,5 @@
 import React from 'react';
+import ProtectedRoute from './pages/admin/ProtectedRoute';
 import LoginPage from './pages/LoginPage';
 import './index.css'; import { Routes, Route } from 'react-router-dom';
 import HomePage from './pages/admin/HomePage';
@@ -19,7 +20,12 @@ function App() {
 
       <Routes>
         <Route path="/" element={<LoginPage />} />
-        <Route path="/homepage" element={<HomePage />} />
+        <Route path="/homepage" element={
+          
+          <ProtectedRoute>
+          <HomePage />
+</ProtectedRoute>
+          } />
         <Route path="/admin/dashboard" element={<Dashboard />} />
       <Route path="/admin/complaint-feed" element={<ComplaintFeed />} />
       <Route path="/admin/manage-complaints" element={<ManageComplaints />} />

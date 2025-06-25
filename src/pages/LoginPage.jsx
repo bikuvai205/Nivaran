@@ -28,6 +28,9 @@ const LoginPage = () => {
 
         // ✅ If login message contains "login successful" (case-insensitive)
         if (res.data.message?.toLowerCase().includes('login successful')) {
+          // 🔒 Mark admin as logged in in localStorage for protected route access
+          localStorage.setItem('isAdminLoggedIn', 'true');
+
           navigate("/homepage"); // 🚀 Redirect to dashboard
         } else {
           setLoginMessage('❌ Login failed. Please try again.');

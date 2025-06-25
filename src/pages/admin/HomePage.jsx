@@ -1,9 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FaUserCircle } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
   const navigate = useNavigate();
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const handleLogout = () => {
+  localStorage.removeItem('isAdminLoggedIn');
+  localStorage.removeItem('adminId');
+  navigate('/', { replace: true }); // replace history entry to prevent back button
+};
+
 
   const cards = [
     { title: '📊 Dashboard', desc: 'Visualize complaint trends & resolution stats', path: '/admin/dashboard' },
@@ -12,23 +20,38 @@ const HomePage = () => {
     { title: '👥 Manage Citizens', desc: 'View and terminate citizen accounts', path: '/admin/manage-citizens' },
     { title: '🛡 Create Authorities', desc: 'Register accounts for government bodies', path: '/admin/create-authorities' },
     { title: '📋 Verified Authorities', desc: 'Browse all approved authority profiles', path: '/admin/verified-authorities' },
-    { title: '🔒 Security Settings', desc: 'Change admin password or manage sessions', path: '/admin/security-settings' },
+    { title: '🔒 Security Settings', desc: 'Change admin password', path: '/admin/security-settings' },
   ];
 
   return (
     <div className="min-h-screen bg-rose-50">
       {/* Navigation */}
-      <div className="w-full bg-gradient-to-r from-rose-100 via-rose-50 to-rose-200 px-6 py-4 shadow-md flex justify-between items-center">
+      <div className="w-full bg-gradient-to-r from-rose-100 via-rose-50 to-rose-200 px-6 py-4 shadow-md flex justify-between items-center relative">
         <h1 className="text-2xl font-bold text-rose-700 tracking-wide select-none">Nivaran</h1>
-        <div className="flex items-center gap-3 text-rose-700">
+        
+        <div className="flex items-center gap-3 text-rose-700 relative">
           <span className="hidden sm:inline font-medium text-sm sm:text-base">Welcome, Admin</span>
+          
+          {/* User Icon Button */}
           <button
             className="hover:text-rose-800 transition text-3xl focus:outline-none"
-            title="Profile / Logout"
-            onClick={() => alert('Logout/Change Password logic coming soon')}
+            title="Logout"
+            onClick={() => setShowDropdown(!showDropdown)}
           >
             <FaUserCircle />
           </button>
+
+          {/* Dropdown Menu */}
+          {showDropdown && (
+            <div className="absolute right-0 top-12 bg-white border border-gray-200 shadow-lg rounded-md w-40 z-50">
+              <button
+                onClick={handleLogout}
+                className="w-full text-left px-4 py-2 hover:bg-rose-100 text-gray-700 text-sm"
+              >
+                🚪 Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
