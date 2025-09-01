@@ -50,7 +50,7 @@ export default function CreateAuthorities() {
       setCreated(res.data);
       setError("");
 
-      console.log("Authority created:", res.data);
+     
     } catch (err) {
       console.error(err);
       setError(err.response?.data?.message || "Server error");
@@ -155,8 +155,7 @@ export default function CreateAuthorities() {
         {created && (
           <div className="mt-6 border rounded-xl p-4 bg-green-50 shadow-sm">
             <h2 className="font-semibold text-green-700 mb-2">Authority Created</h2>
-            <p className="text-sm"><span className="font-medium">Username:</span> {form.username}</p>
-            <p className="text-sm"><span className="font-medium">Password:</span> {showPwd ? form.password : "••••••••"}</p>
+            
           </div>
         )}
       </div>

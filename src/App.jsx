@@ -10,6 +10,7 @@ import ManageCitizens from './pages/admin/ManageCitizens';
 import CreateAuthorities from './pages/admin/CreateAuthorities';
 import VerifiedAuthorities from './pages/admin/VerifiedAuthorities';
 import SecuritySettings from './pages/admin/SecuritySettings';
+import AuthorityDashboard from './pages/authority/AuthorityDashboard';
 
 
 function App() {
@@ -24,7 +25,7 @@ function App() {
           
           <ProtectedRoute>
           <HomePage />
-</ProtectedRoute>
+        </ProtectedRoute>
           } />
         <Route path="/admin/dashboard" element={<Dashboard />} />
       <Route path="/admin/complaint-feed" element={<ComplaintFeed />} />
@@ -33,6 +34,7 @@ function App() {
       <Route path="/admin/create-authorities" element={<CreateAuthorities />} />
       <Route path="/admin/verified-authorities" element={<VerifiedAuthorities />} />
       <Route path="/admin/security-settings" element={<SecuritySettings />} />
+      <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
       </Routes>
 
     </>
