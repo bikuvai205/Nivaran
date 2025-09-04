@@ -9,6 +9,7 @@ const cors = require('cors');
 const adminAuthRoutes = require('./routes/adminAuth');
 const adminRoutes = require('./routes/adminRoute');
 const authorityRoutes = require('./routes/authorities');
+const citizenRoutes = require('./routes/citizenRoutes');
 
 // Load environment variables
 dotenv.config();
@@ -24,6 +25,7 @@ app.use(express.json());
 app.use('/admin', adminAuthRoutes); // Admin login
 app.use('/admin', adminRoutes);     // Admin password management
 app.use('/api/authorities', authorityRoutes); // Authority register & login
+app.use('/api/citizens', citizenRoutes); // Citizen register & login
 
 // MongoDB Connection
 mongoose

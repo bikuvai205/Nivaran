@@ -11,6 +11,7 @@ import CreateAuthorities from './pages/admin/CreateAuthorities';
 import VerifiedAuthorities from './pages/admin/VerifiedAuthorities';
 import SecuritySettings from './pages/admin/SecuritySettings';
 import AuthorityDashboard from './pages/authority/AuthorityDashboard';
+import CitizenDashboard from './pages/citizen/CitizenDashboard';
 
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
       <Route path="/admin/verified-authorities" element={<VerifiedAuthorities />} />
       <Route path="/admin/security-settings" element={<SecuritySettings />} />
       <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
+      <Route path="/citizen/dashboard" element={<CitizenDashboard />} />
       </Routes>
 
     </>
