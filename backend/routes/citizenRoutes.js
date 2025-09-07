@@ -1,4 +1,5 @@
 const express = require('express');
+const router = express.Router();
 const {
   registerCitizen,
   loginCitizen,
@@ -6,25 +7,47 @@ const {
   getAllCitizens,
   deleteCitizenByEmail
 } = require('../controllers/citizenController');
-const authMiddleware = require('../middleware/authMiddleware'); // ✅ middleware to check token
 
-const router = express.Router();
+const authMiddleware = require('../middleware/authMiddleware'); // check token
+const upload = require("../middleware/uploadMiddleware"); // handle file uploads
 
-// Citizen Registration
+// --- Citizen Registration ---
 router.post('/register', registerCitizen);
 
-// Citizen Login
+// --- Citizen Login ---
 router.post('/login', loginCitizen);
 
-// Citizen Dashboard (Protected)
+// --- Citizen Dashboard (Protected) ---
 router.get('/dashboard', authMiddleware, citizenDashboard);
 
+// --- Admin: fetch all citizens ---
+router.get('/', getAllCitizens);
 
-//admin:fetch all citizens
-router.get('/',getAllCitizens);
-
-// Delete citizen by email
+// --- Delete citizen by email ---
 router.delete("/email/:email", deleteCitizenByEmail);
 
+// --- Citizen submits a complaint with image ---
+router.post("/complaints", upload.single("image"), (req, res) => {
+  try {
+    const { title, description, severity, anonymous } = req.body;
 
-module.exports = router; // ✅ CommonJS export
+    // Image path if uploaded
+    const imageUrl = req.file ? `/uploads/complaints/${req.file.filename}` : null;
+
+    // For now, just send back response (later save in DB)
+    res.json({
+      message: "Complaint submitted successfully!",
+      data: {
+        title,
+        description,
+        severity,
+        anonymous,
+        imageUrl,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: "Error uploading complaint", error });
+  }
+});
+
+module.exports = router;
