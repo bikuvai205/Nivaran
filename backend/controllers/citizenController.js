@@ -92,8 +92,44 @@ const citizenDashboard = async (req, res) => {
   }
 };
 
+
+  const getAllCitizens = async (req, res) => {
+  try {
+    const citizens = await Citizen.find().select('-password'); // exclude passwords
+    res.status(200).json(citizens);
+  } catch (error) {
+    console.error('❌ Fetch Citizens Error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+// Delete citizen by email
+const deleteCitizenByEmail = async (req, res) => {
+  try {
+    const { email } = req.params; // get email from URL
+
+    const deletedCitizen = await Citizen.findOneAndDelete({ email });
+
+    if (!deletedCitizen) {
+      return res.status(404).json({ message: "Citizen not found" });
+    }
+
+    res.status(200).json({ message: `Citizen with email ${email} deleted successfully!` });
+  } catch (error) {
+    console.error("❌ Delete Citizen Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+
 module.exports = {
   registerCitizen,
   loginCitizen,
   citizenDashboard,
+  getAllCitizens,
+  deleteCitizenByEmail
 };
+
+
