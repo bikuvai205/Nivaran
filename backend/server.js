@@ -4,6 +4,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const cors = require('cors');
+const path = require('path');
 
 // Routes
 const adminAuthRoutes = require('./routes/adminAuth');
@@ -26,6 +27,8 @@ app.use('/admin', adminAuthRoutes); // Admin login
 app.use('/admin', adminRoutes);     // Admin password management
 app.use('/api/authorities', authorityRoutes); // Authority register & login
 app.use('/api/citizens', citizenRoutes); // Citizen register & login
+app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploads folder as static
+
 
 // MongoDB Connection
 mongoose
