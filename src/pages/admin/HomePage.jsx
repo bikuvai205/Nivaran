@@ -19,7 +19,7 @@ const HomePage = () => {
     { title: '🛠 Manage Complaints', desc: 'Review, verify, or close user complaints', path: '/admin/manage-complaints' },
     { title: '👥 Manage Citizens', desc: 'View and terminate citizen accounts', path: '/admin/manage-citizens' },
     { title: '🛡 Create Authorities', desc: 'Register accounts for government bodies', path: '/admin/create-authorities' },
-    { title: '📋 Verified Authorities', desc: 'Browse all approved authority profiles', path: '/admin/verified-authorities' },
+    { title: '📋 Manage Authorities', desc: 'Browse all approved authority profiles', path: '/admin/verified-authorities' },
     { title: '🔒 Security Settings', desc: 'Change admin password', path: '/admin/security-settings' },
   ];
 

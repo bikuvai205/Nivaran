@@ -1,8 +1,8 @@
-import Authority from "../models/authorities/Authority.js";
-import jwt from "jsonwebtoken";
+const Authority = require("../models/authorities/Authority");
+const jwt = require("jsonwebtoken");
 
 // Register Authority
-export const registerAuthority = async (req, res) => {
+const registerAuthority = async (req, res) => {
   try {
     const { name, username, email, phone, password, type } = req.body;
 
@@ -22,11 +22,11 @@ export const registerAuthority = async (req, res) => {
     }
 
     const newAuthority = new Authority({
-      name,       // Office name
-      username,   // Added
+      name,
+      username,
       email,
-      phone,      // Added
-      password,   // plain → hashed by pre-save hook
+      phone,
+      password, // plain → hashed by pre-save hook
       type,
     });
 
@@ -50,7 +50,7 @@ export const registerAuthority = async (req, res) => {
 };
 
 // Login Authority
-export const loginAuthority = async (req, res) => {
+const loginAuthority = async (req, res) => {
   try {
     const { email, password } = req.body;
 
@@ -76,9 +76,9 @@ export const loginAuthority = async (req, res) => {
       authority: {
         id: authority._id,
         name: authority.name,
-        username: authority.username, // Added
+        username: authority.username,
         email: authority.email,
-        phone: authority.phone,       // Added
+        phone: authority.phone,
         type: authority.type,
       },
     });
@@ -89,6 +89,43 @@ export const loginAuthority = async (req, res) => {
 };
 
 // Protected test route
-export const authorityDashboard = (req, res) => {
+const authorityDashboard = (req, res) => {
   res.send("Welcome Authority! 🎉");
+};
+
+// Get all verified authorities
+const getAllAuthorities = async (req, res) => {
+  try {
+    const authorities = await Authority.find().select("-password"); // Exclude password
+    res.status(200).json(authorities);
+  } catch (error) {
+    console.error("Fetch Error:", error.message);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+//Delete by Authority Email
+const deleteAuthorityByEmail = async (req, res) => {
+  const { email } = req.params;
+  try {
+    const authority = await Authority.findOne({ email });
+    if (!authority) return res.status(404).json({ message: "Authority not found" });
+
+    await Authority.deleteOne({ email });
+    res.status(200).json({ message: `Authority ${email} deleted successfully!` });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+
+// Export all functions (CommonJS)
+module.exports = {
+  registerAuthority,
+  loginAuthority,
+  authorityDashboard,
+  getAllAuthorities,
+  deleteAuthorityByEmail
 };

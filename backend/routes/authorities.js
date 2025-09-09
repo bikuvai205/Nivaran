@@ -1,22 +1,27 @@
-// routes/authorities.js
-
 const express = require("express");
 const {
   registerAuthority,
   loginAuthority,
   authorityDashboard,
+  getAllAuthorities,
+  deleteAuthorityByEmail
 } = require("../controllers/authorityController");
 
 const router = express.Router();
 
-// Register
+// Register Authority
 router.post("/register", registerAuthority);
 
-// Login
+// Login Authority
 router.post("/login", loginAuthority);
 
 // Dashboard (protected test route)
 router.get("/dashboard", authorityDashboard);
 
-module.exports = router;
+// Get all verified authorities
+router.get("/", getAllAuthorities);
 
+// Delete authority by email
+router.delete("/email/:email", deleteAuthorityByEmail);
+
+module.exports = router;
