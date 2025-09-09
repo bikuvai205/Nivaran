@@ -4,21 +4,29 @@ import jwt from "jsonwebtoken";
 // Register Authority
 export const registerAuthority = async (req, res) => {
   try {
-    const { name, email, password, type } = req.body;
+    const { name, username, email, phone, password, type } = req.body;
 
-    if (!name || !email || !password || !type) {
+    if (!name || !username || !email || !phone || !password || !type) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existing = await Authority.findOne({ email });
-    if (existing) {
+    // Check duplicate email or username
+    const existingEmail = await Authority.findOne({ email });
+    if (existingEmail) {
       return res.status(400).json({ message: "Email already registered" });
     }
 
+    const existingUsername = await Authority.findOne({ username });
+    if (existingUsername) {
+      return res.status(400).json({ message: "Username already taken" });
+    }
+
     const newAuthority = new Authority({
-      name,
+      name,       // Office name
+      username,   // Added
       email,
-      password, // plain → hashed by pre-save hook
+      phone,      // Added
+      password,   // plain → hashed by pre-save hook
       type,
     });
 
@@ -29,7 +37,9 @@ export const registerAuthority = async (req, res) => {
       authority: {
         id: savedAuthority._id,
         name: savedAuthority.name,
+        username: savedAuthority.username,
         email: savedAuthority.email,
+        phone: savedAuthority.phone,
         type: savedAuthority.type,
       },
     });
@@ -66,7 +76,9 @@ export const loginAuthority = async (req, res) => {
       authority: {
         id: authority._id,
         name: authority.name,
+        username: authority.username, // Added
         email: authority.email,
+        phone: authority.phone,       // Added
         type: authority.type,
       },
     });

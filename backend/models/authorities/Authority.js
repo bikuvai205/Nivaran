@@ -2,8 +2,10 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcrypt");
 
 const authoritySchema = new mongoose.Schema({
-  name: { type: String, required: true },           
+  name: { type: String, required: true },            // Office/Unit name
+  username: { type: String, required: true, unique: true }, // New field
   email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },           // New field
   password: { type: String, required: true },
   type: { 
     type: String, 
