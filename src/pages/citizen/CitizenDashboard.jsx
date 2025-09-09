@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
+import * as tf from '@tensorflow/tfjs';
+import * as nsfwjs from 'nsfwjs';
 import {
   Home,
   LayoutDashboard,
@@ -21,27 +23,35 @@ const MAX_TITLE = 120;
 const MAX_DESC = 2000;
 const MAX_IMAGES = 4;
 const ACCEPTED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+const NSFW_THRESHOLD = 0.8; // Block images with >80% probability of NSFW content
 
 const CitizenDashboard = () => {
   const [citizen, setCitizen] = useState(null);
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
-
-  // demo data for existing tabs
   const [pendingComplaints, setPendingComplaints] = useState([
     { id: 1, user: 'User1', time: '6 Oct 2024 8:04 pm', content: 'Hello, this is a pending complaint.', votes: 38, userVote: 0 },
     { id: 2, user: 'User2', time: '5 Oct 2024 7:30 pm', content: 'Another issue that needs attention.', votes: 456, userVote: 0 },
     { id: 3, user: 'User3', time: '4 Oct 2024 6:15 pm', content: 'Problem with the system.', votes: 30, userVote: 0 },
   ]);
-
-  // ===== Composer state (UI only) =====
   const [title, setTitle] = useState('');
   const [desc, setDesc] = useState('');
-  const [severity, setSeverity] = useState('medium'); // low | medium | high
+  const [severity, setSeverity] = useState('medium');
   const [anonymous, setAnonymous] = useState(false);
-  const [images, setImages] = useState([]);            // File[]
-  const [imagePreviews, setImagePreviews] = useState([]); // object URLs
+  const [images, setImages] = useState([]);
+  const [imagePreviews, setImagePreviews] = useState([]);
   const [composerError, setComposerError] = useState('');
+  const [nsfwModel, setNsfwModel] = useState(null);
+
+  // Load NSFWJS model
+  useEffect(() => {
+    const loadModel = async () => {
+      await tf.setBackend('cpu'); // Use CPU backend for simplicity
+      const model = await nsfwjs.load();
+      setNsfwModel(model);
+    };
+    loadModel();
+  }, []);
 
   useEffect(() => {
     const fetchCitizen = async () => {
@@ -62,7 +72,7 @@ const CitizenDashboard = () => {
     fetchCitizen();
   }, []);
 
-  // vote demo handlers
+  // Vote handlers
   const handleVote = (id, direction) => {
     setPendingComplaints(prev =>
       prev.map(c => {
@@ -83,30 +93,75 @@ const CitizenDashboard = () => {
     );
   };
 
-  // ===== Composer helpers (UI only) =====
+  // Composer helpers
   const titleCount = useMemo(() => `${title.length}/${MAX_TITLE}`, [title]);
   const descCount = useMemo(() => `${desc.length}/${MAX_DESC}`, [desc]);
 
-  // create/revoke object URLs for previews
   useEffect(() => {
-    // revoke previous
     imagePreviews.forEach(url => URL.revokeObjectURL(url));
     const next = images.map(file => URL.createObjectURL(file));
     setImagePreviews(next);
-    // cleanup all on unmount
     return () => next.forEach(url => URL.revokeObjectURL(url));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [images]);
 
-  const acceptFiles = (fileList) => {
+  const checkNSFW = async (file) => {
+    if (!nsfwModel) return { isSafe: true, nsfwType: null }; // Skip if model not loaded
+    try {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      await new Promise(resolve => {
+        img.onload = resolve;
+        img.onerror = resolve;
+      });
+      const predictions = await nsfwModel.classify(img);
+      URL.revokeObjectURL(url);
+
+      const nsfwCategories = ['Porn', 'Hentai', 'Sexy'];
+      const nsfwPrediction = predictions.find(pred =>
+        nsfwCategories.includes(pred.className) && pred.probability >= NSFW_THRESHOLD
+      );
+
+      if (nsfwPrediction) {
+        return { isSafe: false, nsfwType: nsfwPrediction.className };
+      }
+      return { isSafe: true, nsfwType: null };
+    } catch (err) {
+      console.error('NSFW check error:', err);
+      return { isSafe: true, nsfwType: null }; // Allow if check fails
+    }
+  };
+
+  const acceptFiles = async (fileList) => {
     setComposerError('');
     const files = Array.from(fileList || []);
-    const valid = files.filter(f => ACCEPTED_IMG_TYPES.includes(f.type));
-    const rejected = files.length - valid.length;
+    const validFiles = files.filter(f => ACCEPTED_IMG_TYPES.includes(f.type));
+    const rejected = files.length - validFiles.length;
     if (rejected > 0) {
       setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
     }
-    const combined = [...images, ...valid].slice(0, MAX_IMAGES);
+
+    const safeFiles = [];
+    let nsfwDetected = false;
+    let nsfwTypes = [];
+
+    for (const file of validFiles) {
+      const { isSafe, nsfwType } = await checkNSFW(file);
+      if (isSafe) {
+        safeFiles.push(file);
+      } else {
+        nsfwDetected = true;
+        if (nsfwType && !nsfwTypes.includes(nsfwType)) {
+          nsfwTypes.push(nsfwType);
+        }
+      }
+    }
+
+    if (nsfwDetected) {
+      setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
+    }
+
+    const combined = [...images, ...safeFiles].slice(0, MAX_IMAGES);
     if (combined.length > MAX_IMAGES) {
       setComposerError(`You can upload up to ${MAX_IMAGES} images.`);
     }
@@ -114,22 +169,18 @@ const CitizenDashboard = () => {
   };
 
   const onFileInputChange = (e) => acceptFiles(e.target.files);
-
   const onDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     acceptFiles(e.dataTransfer.files);
   };
-
   const onDragOver = (e) => {
     e.preventDefault();
     e.stopPropagation();
   };
-
   const removeImageAt = (idx) => {
     setImages(prev => prev.filter((_, i) => i !== idx));
   };
-
   const clearComposer = () => {
     setTitle('');
     setDesc('');
@@ -138,66 +189,58 @@ const CitizenDashboard = () => {
     setImages([]);
     setComposerError('');
   };
-
   const canSubmit = title.trim().length > 0 && desc.trim().length > 0;
 
-const handleSubmitComplaint = async () => {
-  if (!canSubmit) {
-    setComposerError('Please provide a title and description.');
-    return;
-  }
-
-  try {
-    const token = localStorage.getItem('citizenToken');
-    if (!token) {
-      setComposerError('No token found. Please log in again.');
+  const handleSubmitComplaint = async () => {
+    if (!canSubmit) {
+      setComposerError('Please provide a title and description.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('title', title.trim());
-    formData.append('description', desc.trim());
-    formData.append('severity', severity);
-    formData.append('anonymous', anonymous);
-
-    // Append images if any
-    images.forEach(img => formData.append('image', img));
-
-    const res = await axios.post(
-      'http://localhost:5000/api/citizens/complaints',
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'multipart/form-data',
-        },
+    try {
+      const token = localStorage.getItem('citizenToken');
+      if (!token) {
+        setComposerError('No token found. Please log in again.');
+        return;
       }
-    );
 
-    console.log('Complaint submitted:', res.data);
-    alert('Complaint submitted successfully!');
+      const formData = new FormData();
+      formData.append('title', title.trim());
+      formData.append('description', desc.trim());
+      formData.append('severity', severity);
+      formData.append('anonymous', anonymous);
+      images.forEach(img => formData.append('image', img));
 
-    // Reset composer
-    clearComposer();
+      const res = await axios.post(
+        'http://localhost:5000/api/citizens/complaints',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
 
-    // Optionally, refresh the pending complaints list
-    setPendingComplaints(prev => [
-      ...prev,
-      {
-        id: Date.now(),
-        user: anonymous ? 'Anonymous' : citizen.fullName,
-        time: new Date().toLocaleString(),
-        content: desc,
-        votes: 0,
-        userVote: 0,
-      },
-    ]);
-  } catch (err) {
-    console.error(err);
-    setComposerError(err.response?.data?.message || 'Failed to submit complaint.');
-  }
-};
-
+      console.log('Complaint submitted:', res.data);
+      alert('Complaint submitted successfully!');
+      clearComposer();
+      setPendingComplaints(prev => [
+        ...prev,
+        {
+          id: Date.now(),
+          user: anonymous ? 'Anonymous' : citizen.fullName,
+          time: new Date().toLocaleString(),
+          content: desc,
+          votes: 0,
+          userVote: 0,
+        },
+      ]);
+    } catch (err) {
+      console.error('Submit complaint error:', err);
+      setComposerError(err.response?.data?.message || 'Failed to submit complaint.');
+    }
+  };
 
   if (error) return <p className="text-red-600 text-center">{error}</p>;
   if (!citizen) return <p className="text-center">Loading dashboard...</p>;
@@ -219,9 +262,7 @@ const handleSubmitComplaint = async () => {
   const renderCompose = () => (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-rose-600 mb-4">Register a Complaint</h2>
-
       <div className="bg-white shadow-xl rounded-2xl p-6 space-y-5 border border-rose-100">
-        {/* Title */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
           <div className="flex items-center gap-2">
@@ -235,8 +276,6 @@ const handleSubmitComplaint = async () => {
             <span className="text-xs text-gray-500">{titleCount}</span>
           </div>
         </div>
-
-        {/* Description */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
           <div className="flex items-start gap-2">
@@ -250,8 +289,6 @@ const handleSubmitComplaint = async () => {
             <span className="text-xs text-gray-500 mt-1">{descCount}</span>
           </div>
         </div>
-
-        {/* Severity */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Severity</label>
           <div className="grid grid-cols-3 gap-3">
@@ -272,8 +309,6 @@ const handleSubmitComplaint = async () => {
             ))}
           </div>
         </div>
-
-        {/* Anonymous */}
         <div className="flex items-start gap-3">
           <label className="inline-flex items-center cursor-pointer select-none">
             <input
@@ -291,11 +326,8 @@ const handleSubmitComplaint = async () => {
             Your identity will be hidden from other citizens. Admins can still view your details for verification and action.
           </p>
         </div>
-
-        {/* Image upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Images (optional)</label>
-
           <div
             onDrop={onDrop}
             onDragOver={onDragOver}
@@ -317,8 +349,6 @@ const handleSubmitComplaint = async () => {
             </p>
             <p className="text-xs text-gray-500 mt-1">Up to {MAX_IMAGES} images. PNG, JPG, JPEG, WEBP, GIF.</p>
           </div>
-
-          {/* Previews */}
           {imagePreviews.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {imagePreviews.map((src, idx) => (
@@ -337,11 +367,7 @@ const handleSubmitComplaint = async () => {
             </div>
           )}
         </div>
-
-        {/* Error message */}
         {composerError && <p className="text-sm text-red-600">{composerError}</p>}
-
-        {/* Actions */}
         <div className="flex items-center justify-between pt-2">
           <button
             type="button"
@@ -375,7 +401,6 @@ const handleSubmitComplaint = async () => {
             <div className="space-y-6">
               {pendingComplaints.map(complaint => (
                 <div key={complaint.id} className="bg-white shadow-xl rounded-2xl p-6 flex">
-                  {/* Vote section */}
                   <div className="flex flex-col items-center mr-6 space-y-1">
                     <button
                       onClick={() => handleVote(complaint.id, 1)}
@@ -391,7 +416,6 @@ const handleSubmitComplaint = async () => {
                       <ArrowDown size={24} />
                     </button>
                   </div>
-                  {/* Content */}
                   <div className="flex-1">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-semibold text-rose-900 text-lg">{complaint.user}</span>
@@ -439,18 +463,14 @@ const handleSubmitComplaint = async () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-rose-50 via-white to-rose-100 flex flex-col md:flex-row">
-      {/* Left Sidebar */}
       <aside className="w-full md:w-64 bg-white shadow-xl p-6 flex flex-row md:flex-col justify-around md:justify-start items-center md:items-start space-x-4 md:space-x-0 md:space-y-4">
         <NavButton icon={Home} label="Home" tabKey="pending" />
         <NavButton icon={LayoutDashboard} label="Dashboard" tabKey="pending" />
         <NavButton icon={AlertCircle} label="Register a Complaint" tabKey="compose" />
         <NavButton icon={FileText} label="Complaints" tabKey="pending" />
       </aside>
-
-      {/* Main */}
       <main className="flex-1 p-4 md:p-8">
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          {/* Top Tabs - FIXED: only pending, in-progress, resolved */}
           <nav className="flex border-b border-rose-200">
             {['pending', 'in-progress', 'resolved'].map(tab => (
               <button
@@ -466,13 +486,9 @@ const handleSubmitComplaint = async () => {
               </button>
             ))}
           </nav>
-
-          {/* Content */}
           {renderTabContent()}
         </div>
       </main>
-
-      {/* Right Sidebar */}
       <aside className="w-full md:w-64 bg-white shadow-xl p-6 flex flex-row md:flex-col justify-around md:justify-start items-center md:items-start space-x-4 md:space-x-0 md:space-y-4">
         <div className="flex items-center text-rose-600 font-semibold mb-0 md:mb-4">
           <User className="mr-2" size={20} />
