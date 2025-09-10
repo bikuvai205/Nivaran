@@ -154,27 +154,29 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       images.forEach(img => formData.append('image', img));
 
       const res = await axios.post(
-        'http://localhost:5000/api/citizens/complaints',
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+  'http://localhost:5000/api/complaints',
+  formData,
+  {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'multipart/form-data',
+    },
+  }
+);
+onSubmitSuccess(res.data.complaint);
 
-      console.log('Complaint submitted:', res.data);
-      alert('Complaint submitted successfully!');
-      clearComposer();
-      onSubmitSuccess({
-        id: Date.now(),
-        user: anonymous ? 'Anonymous' : citizen.fullName,
-        time: new Date().toLocaleString(),
-        content: desc,
-        votes: 0,
-        userVote: 0,
-      });
+
+      // console.log('Complaint submitted:', res.data);
+      // alert('Complaint submitted successfully!');
+      // clearComposer();
+      // onSubmitSuccess({
+      //   id: Date.now(),
+      //   user: anonymous ? 'Anonymous' : citizen.fullName,
+      //   time: new Date().toLocaleString(),
+      //   content: desc,
+      //   votes: 0,
+      //   userVote: 0,
+      // });
     } catch (err) {
       console.error('Submit complaint error:', err);
       setComposerError(err.response?.data?.message || 'Failed to submit complaint.');

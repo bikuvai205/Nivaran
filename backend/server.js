@@ -11,6 +11,9 @@ const adminAuthRoutes = require('./routes/adminAuth');
 const adminRoutes = require('./routes/adminRoute');
 const authorityRoutes = require('./routes/authorities');
 const citizenRoutes = require('./routes/citizenRoutes');
+const complaintRoutes = require("./routes/complaintRoutes");
+
+
 
 // Load environment variables
 dotenv.config();
@@ -28,6 +31,7 @@ app.use('/admin', adminRoutes);     // Admin password management
 app.use('/api/authorities', authorityRoutes); // Authority register & login
 app.use('/api/citizens', citizenRoutes); // Citizen register & login
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploads folder as static
+app.use("/api/complaints", complaintRoutes); // Complaint routes
 
 
 // MongoDB Connection

@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
+const Citizen = require("../models/Citizen"); // adjust path if needed
 
-const authMiddleware = (req, res, next) => {
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -11,7 +12,14 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded; // user info (id, email, etc.)
+
+    // Fetch citizen from DB
+    const citizen = await Citizen.findById(decoded.id).select("_id fullName email");
+    if (!citizen) {
+      return res.status(401).json({ message: "Citizen not found" });
+    }
+
+    req.user = citizen; // attach authenticated citizen
     next();
   } catch (error) {
     console.error("Auth Middleware Error:", error);
