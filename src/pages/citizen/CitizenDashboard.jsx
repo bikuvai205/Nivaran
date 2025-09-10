@@ -1,3 +1,4 @@
+// src/pages/citizen/CitizenDashboard.jsx
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import {
@@ -14,6 +15,7 @@ import {
   ArrowDown,
   ChevronLeft,
   ChevronRight,
+  MapPin
 } from 'lucide-react';
 import RegisterComplaint from './RegisterComplaint';
 
@@ -22,7 +24,6 @@ const CitizenDashboard = () => {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('pending');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
-
   const [complaints, setComplaints] = useState([]);
 
   useEffect(() => {
@@ -42,18 +43,17 @@ const CitizenDashboard = () => {
     fetchCitizen();
   }, []);
 
-  // Fetch complaints
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
         const res = await axios.get('http://localhost:5000/api/complaints/pending');
-        // Map to required frontend structure
         const mapped = res.data.map((c) => ({
           id: c._id,
           user: c.anonymous ? 'Anonymous' : c.user.fullName,
           time: new Date(c.createdAt).toLocaleString(),
           title: c.title,
           content: c.description,
+          location: c.location || 'N/A', // <-- new field
           severity: c.severity,
           upvotes: c.upvotes,
           downvotes: c.downvotes,
@@ -68,25 +68,17 @@ const CitizenDashboard = () => {
     fetchComplaints();
   }, []);
 
-  // Vote handlers
   const handleVote = (id, voteType) => {
     setComplaints((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c;
-
         let up = c.upvotes;
         let down = c.downvotes;
-
         if (c.userVote === 1) up--;
         if (c.userVote === -1) down--;
-
-        if (c.userVote === voteType) {
-          return { ...c, upvotes: up, downvotes: down, userVote: 0 };
-        }
-
+        if (c.userVote === voteType) return { ...c, upvotes: up, downvotes: down, userVote: 0 };
         if (voteType === 1) up++;
         if (voteType === -1) down++;
-
         return { ...c, upvotes: up, downvotes: down, userVote: voteType };
       })
     );
@@ -99,6 +91,7 @@ const CitizenDashboard = () => {
       time: new Date(newComplaint.createdAt || Date.now()).toLocaleString(),
       title: newComplaint.title,
       content: newComplaint.description,
+      location: newComplaint.location || 'N/A', // <-- new field
       severity: newComplaint.severity,
       upvotes: 0,
       downvotes: 0,
@@ -146,13 +139,26 @@ const CitizenDashboard = () => {
                   className="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
                 >
                   <div className="px-6 pt-4">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-blue-800">{complaint.user}</span>
-                      <span className="text-sm text-gray-500">{complaint.time}</span>
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{complaint.title}</h3>
-                    <hr className="border-gray-300 border-[1.2px] mb-3" />
-                  </div>
+  <div className="flex justify-between mb-2">
+    {/* Left: user */}
+    <span className="font-semibold text-blue-800">{complaint.user}</span>
+
+    {/* Right: time and location */}
+    <div className="flex flex-col items-end text-sm text-gray-500">
+      <span>{complaint.time}</span>
+      {complaint.location && (
+        <div className="flex items-center mt-1">
+          <MapPin size={16} className="mr-1 text-rose-500 flex-shrink-0" />
+          <span className="truncate max-w-[120px]">{complaint.location}</span>
+        </div>
+      )}
+    </div>
+  </div>
+
+  <h3 className="text-xl font-bold text-gray-900 mb-3">{complaint.title}</h3>
+  <hr className="border-gray-300 border-[1.2px] mb-3" />
+</div>
+
 
                   <div className="px-6 pb-4">
                     <p className="text-gray-700 mb-4">{complaint.content}</p>
@@ -172,9 +178,7 @@ const CitizenDashboard = () => {
                       <button
                         onClick={() => handleVote(complaint.id, 1)}
                         className={`transition-colors ${
-                          complaint.userVote === 1
-                            ? 'text-blue-600'
-                            : 'text-gray-400 hover:text-blue-600'
+                          complaint.userVote === 1 ? 'text-blue-600' : 'text-gray-400 hover:text-blue-600'
                         }`}
                       >
                         <ArrowUp
@@ -190,9 +194,7 @@ const CitizenDashboard = () => {
                       <button
                         onClick={() => handleVote(complaint.id, -1)}
                         className={`transition-colors ${
-                          complaint.userVote === -1
-                            ? 'text-red-600'
-                            : 'text-gray-400 hover:text-red-600'
+                          complaint.userVote === -1 ? 'text-red-600' : 'text-gray-400 hover:text-red-600'
                         }`}
                       >
                         <ArrowDown

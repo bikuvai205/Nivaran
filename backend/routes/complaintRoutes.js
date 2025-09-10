@@ -20,8 +20,13 @@ const upload = multer({ storage });
 // POST route: create complaint
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
-    const { title, description, severity, anonymous } = req.body;
+    const { title, description, severity, anonymous, location } = req.body;
     const image = req.file ? req.file.filename : null;
+
+    // Validate required fields
+    if (!title || !description || !location) {
+      return res.status(400).json({ message: "Title, description, and location are required." });
+    }
 
     const complaint = new Complaint({
       user: req.user._id,
@@ -30,6 +35,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       severity,
       anonymous: anonymous === "true",
       image,
+      location, // <-- Added location
       upvotes: 0,
       downvotes: 0,
       status: "pending",

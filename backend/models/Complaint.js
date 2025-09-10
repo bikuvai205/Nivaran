@@ -11,6 +11,7 @@ const complaintSchema = new mongoose.Schema(
     upvotes: { type: Number, default: 0 },
     downvotes: { type: Number, default: 0 },
     status: { type: String, enum: ["pending", "in-progress", "resolved"], default: "pending" },
+    location: { type: String, required: true },
   },
   { timestamps: true }
 );
