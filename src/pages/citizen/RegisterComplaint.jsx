@@ -5,25 +5,16 @@ import * as tf from '@tensorflow/tfjs';
 import * as nsfwjs from 'nsfwjs';
 import { UploadCloud, X, Shield } from 'lucide-react';
 
-
 const MAX_TITLE = 120;
 const MAX_DESC = 2000;
 const MAX_IMAGES = 4;
 const ACCEPTED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
-const NSFW_THRESHOLD = 0.8; // Block images with >80% probability of NSFW content
+const NSFW_THRESHOLD = 0.8;
 
 const COMPLAINT_TYPES = [
-  "Road Problem",
-  "Garbage/Waste",
-  "Water/Pollution",
-  "Electricity",
-  "Public Safety",
-  "Health&Sanitation",
-  "Traffic",
-  "Maintenance",
-  "Infrastructure",
-  "Environmental",
-  "Other"
+  "Road Problem", "Garbage/Waste", "Water/Pollution", "Electricity",
+  "Public Safety", "Health&Sanitation", "Traffic", "Maintenance",
+  "Infrastructure", "Environmental", "Other"
 ];
 
 const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
@@ -32,12 +23,14 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   const [location, setLocation] = useState('');
   const [severity, setSeverity] = useState('medium');
   const [anonymous, setAnonymous] = useState(false);
-const [complaintType, setComplaintType] = useState(''); // replace `type`
-
+  const [complaintType, setComplaintType] = useState('');
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [composerError, setComposerError] = useState('');
   const [nsfwModel, setNsfwModel] = useState(null);
+
+  // Toast state
+  const [toast, setToast] = useState(null);
 
   // Load NSFWJS model
   useEffect(() => {
@@ -60,7 +53,7 @@ const [complaintType, setComplaintType] = useState(''); // replace `type`
   }, [images]);
 
   const checkNSFW = async (file) => {
-    if (!nsfwModel) return { isSafe: true, nsfwType: null };
+    if (!nsfwModel) return { isSafe: true };
     try {
       const img = new Image();
       const url = URL.createObjectURL(file);
@@ -73,10 +66,10 @@ const [complaintType, setComplaintType] = useState(''); // replace `type`
         nsfwCategories.includes(pred.className) && pred.probability >= NSFW_THRESHOLD
       );
       if (nsfwPrediction) return { isSafe: false, nsfwType: nsfwPrediction.className };
-      return { isSafe: true, nsfwType: null };
+      return { isSafe: true };
     } catch (err) {
       console.error('NSFW check error:', err);
-      return { isSafe: true, nsfwType: null };
+      return { isSafe: true };
     }
   };
 
@@ -88,19 +81,13 @@ const [complaintType, setComplaintType] = useState(''); // replace `type`
     if (rejected > 0) setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
 
     const safeFiles = [];
-    let nsfwDetected = false;
     let nsfwTypes = [];
-
     for (const file of validFiles) {
       const { isSafe, nsfwType } = await checkNSFW(file);
       if (isSafe) safeFiles.push(file);
-      else {
-        nsfwDetected = true;
-        if (nsfwType && !nsfwTypes.includes(nsfwType)) nsfwTypes.push(nsfwType);
-      }
+      else if (nsfwType && !nsfwTypes.includes(nsfwType)) nsfwTypes.push(nsfwType);
     }
-
-    if (nsfwDetected) setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
+    if (nsfwTypes.length) setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
 
     const combined = [...images, ...safeFiles].slice(0, MAX_IMAGES);
     if (combined.length > MAX_IMAGES) setComposerError(`You can upload up to ${MAX_IMAGES} images.`);
@@ -112,7 +99,8 @@ const [complaintType, setComplaintType] = useState(''); // replace `type`
   const onDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
   const removeImageAt = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
   const clearComposer = () => {
-    setTitle(''); setDesc(''); setLocation(''); setSeverity('medium'); setAnonymous(false); setComplaintType(''); setImages([]); setComposerError('');
+    setTitle(''); setDesc(''); setLocation(''); setSeverity('medium');
+    setAnonymous(false); setComplaintType(''); setImages([]); setComposerError('');
   };
 
   const canSubmit = title.trim() && desc.trim() && location.trim() && complaintType.trim();
@@ -135,22 +123,39 @@ const [complaintType, setComplaintType] = useState(''); // replace `type`
       formData.append('complaintType', complaintType);
       images.forEach(img => formData.append('image', img));
 
-      const res = await axios.post(
-        'http://localhost:5000/api/complaints',
-        formData,
-        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
-      );
+      const res = await axios.post('http://localhost:5000/api/complaints', formData, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
+      });
 
-      onSubmitSuccess(res.data.complaint);
+      const newComplaint = res.data.complaint || res.data;
+      if (onSubmitSuccess) onSubmitSuccess(newComplaint);
+
       clearComposer();
+
+      // ✅ Show success toast
+      setToast({ message: 'Complaint submitted successfully!', type: 'success' });
+      setTimeout(() => setToast(null), 4000);
     } catch (err) {
       console.error('Submit complaint error:', err);
-      setComposerError(err.response?.data?.message || 'Failed to submit complaint.');
+      const message = err.response?.data?.message || 'Failed to submit complaint.';
+
+      // Show error toast
+      setToast({ message, type: 'error' });
+      setTimeout(() => setToast(null), 4000);
     }
   };
 
   return (
-    <div className="p-6">
+    <div className="p-6 relative">
+      {/* Toast */}
+      {toast && (
+        <div className={`fixed top-5 right-5 px-4 py-2 rounded-xl text-white font-semibold shadow-lg transition-transform transform
+          ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'} animate-slideIn`}
+        >
+          {toast.message}
+        </div>
+      )}
+
       <h2 className="text-2xl font-bold text-rose-600 mb-4">Register a Complaint</h2>
       <div className="bg-white shadow-xl rounded-2xl p-6 space-y-5 border border-rose-100">
         {/* Title */}
