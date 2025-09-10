@@ -1,7 +1,6 @@
-import React, { useEffect, useMemo, useState } from 'react';
+// src/pages/citizen/CitizenDashboard.jsx
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import * as tf from '@tensorflow/tfjs';
-import * as nsfwjs from 'nsfwjs';
 import {
   Home,
   LayoutDashboard,
@@ -14,16 +13,8 @@ import {
   Clock,
   Image as ImageIcon,
   ArrowDown,
-  UploadCloud,
-  X,
-  Shield
 } from 'lucide-react';
-
-const MAX_TITLE = 120;
-const MAX_DESC = 2000;
-const MAX_IMAGES = 4;
-const ACCEPTED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
-const NSFW_THRESHOLD = 0.8; // Block images with >80% probability of NSFW content
+import RegisterComplaint from './RegisterComplaint';
 
 const CitizenDashboard = () => {
   const [citizen, setCitizen] = useState(null);
@@ -34,24 +25,6 @@ const CitizenDashboard = () => {
     { id: 2, user: 'User2', time: '5 Oct 2024 7:30 pm', content: 'Another issue that needs attention.', votes: 456, userVote: 0 },
     { id: 3, user: 'User3', time: '4 Oct 2024 6:15 pm', content: 'Problem with the system.', votes: 30, userVote: 0 },
   ]);
-  const [title, setTitle] = useState('');
-  const [desc, setDesc] = useState('');
-  const [severity, setSeverity] = useState('medium');
-  const [anonymous, setAnonymous] = useState(false);
-  const [images, setImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
-  const [composerError, setComposerError] = useState('');
-  const [nsfwModel, setNsfwModel] = useState(null);
-
-  // Load NSFWJS model
-  useEffect(() => {
-    const loadModel = async () => {
-      await tf.setBackend('cpu'); // Use CPU backend for simplicity
-      const model = await nsfwjs.load();
-      setNsfwModel(model);
-    };
-    loadModel();
-  }, []);
 
   useEffect(() => {
     const fetchCitizen = async () => {
@@ -93,153 +66,8 @@ const CitizenDashboard = () => {
     );
   };
 
-  // Composer helpers
-  const titleCount = useMemo(() => `${title.length}/${MAX_TITLE}`, [title]);
-  const descCount = useMemo(() => `${desc.length}/${MAX_DESC}`, [desc]);
-
-  useEffect(() => {
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    const next = images.map(file => URL.createObjectURL(file));
-    setImagePreviews(next);
-    return () => next.forEach(url => URL.revokeObjectURL(url));
-  }, [images]);
-
-  const checkNSFW = async (file) => {
-    if (!nsfwModel) return { isSafe: true, nsfwType: null }; // Skip if model not loaded
-    try {
-      const img = new Image();
-      const url = URL.createObjectURL(file);
-      img.src = url;
-      await new Promise(resolve => {
-        img.onload = resolve;
-        img.onerror = resolve;
-      });
-      const predictions = await nsfwModel.classify(img);
-      URL.revokeObjectURL(url);
-
-      const nsfwCategories = ['Porn', 'Hentai', 'Sexy'];
-      const nsfwPrediction = predictions.find(pred =>
-        nsfwCategories.includes(pred.className) && pred.probability >= NSFW_THRESHOLD
-      );
-
-      if (nsfwPrediction) {
-        return { isSafe: false, nsfwType: nsfwPrediction.className };
-      }
-      return { isSafe: true, nsfwType: null };
-    } catch (err) {
-      console.error('NSFW check error:', err);
-      return { isSafe: true, nsfwType: null }; // Allow if check fails
-    }
-  };
-
-  const acceptFiles = async (fileList) => {
-    setComposerError('');
-    const files = Array.from(fileList || []);
-    const validFiles = files.filter(f => ACCEPTED_IMG_TYPES.includes(f.type));
-    const rejected = files.length - validFiles.length;
-    if (rejected > 0) {
-      setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
-    }
-
-    const safeFiles = [];
-    let nsfwDetected = false;
-    let nsfwTypes = [];
-
-    for (const file of validFiles) {
-      const { isSafe, nsfwType } = await checkNSFW(file);
-      if (isSafe) {
-        safeFiles.push(file);
-      } else {
-        nsfwDetected = true;
-        if (nsfwType && !nsfwTypes.includes(nsfwType)) {
-          nsfwTypes.push(nsfwType);
-        }
-      }
-    }
-
-    if (nsfwDetected) {
-      setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
-    }
-
-    const combined = [...images, ...safeFiles].slice(0, MAX_IMAGES);
-    if (combined.length > MAX_IMAGES) {
-      setComposerError(`You can upload up to ${MAX_IMAGES} images.`);
-    }
-    setImages(combined);
-  };
-
-  const onFileInputChange = (e) => acceptFiles(e.target.files);
-  const onDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    acceptFiles(e.dataTransfer.files);
-  };
-  const onDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-  const removeImageAt = (idx) => {
-    setImages(prev => prev.filter((_, i) => i !== idx));
-  };
-  const clearComposer = () => {
-    setTitle('');
-    setDesc('');
-    setSeverity('medium');
-    setAnonymous(false);
-    setImages([]);
-    setComposerError('');
-  };
-  const canSubmit = title.trim().length > 0 && desc.trim().length > 0;
-
-  const handleSubmitComplaint = async () => {
-    if (!canSubmit) {
-      setComposerError('Please provide a title and description.');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('citizenToken');
-      if (!token) {
-        setComposerError('No token found. Please log in again.');
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('title', title.trim());
-      formData.append('description', desc.trim());
-      formData.append('severity', severity);
-      formData.append('anonymous', anonymous);
-      images.forEach(img => formData.append('image', img));
-
-      const res = await axios.post(
-        'http://localhost:5000/api/citizens/complaints',
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
-
-      console.log('Complaint submitted:', res.data);
-      alert('Complaint submitted successfully!');
-      clearComposer();
-      setPendingComplaints(prev => [
-        ...prev,
-        {
-          id: Date.now(),
-          user: anonymous ? 'Anonymous' : citizen.fullName,
-          time: new Date().toLocaleString(),
-          content: desc,
-          votes: 0,
-          userVote: 0,
-        },
-      ]);
-    } catch (err) {
-      console.error('Submit complaint error:', err);
-      setComposerError(err.response?.data?.message || 'Failed to submit complaint.');
-    }
+  const handleSubmitSuccess = (newComplaint) => {
+    setPendingComplaints(prev => [...prev, newComplaint]);
   };
 
   if (error) return <p className="text-red-600 text-center">{error}</p>;
@@ -259,175 +87,89 @@ const CitizenDashboard = () => {
     </button>
   );
 
-  const renderCompose = () => (
-    <div className="p-6">
-      <h2 className="text-2xl font-bold text-rose-600 mb-4">Register a Complaint</h2>
-      <div className="bg-white shadow-xl rounded-2xl p-6 space-y-5 border border-rose-100">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => e.target.value.length <= MAX_TITLE && setTitle(e.target.value)}
-              placeholder="Give a short, clear title for your complaint."
-              className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white"
-            />
-            <span className="text-xs text-gray-500">{titleCount}</span>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
-          <div className="flex items-start gap-2">
-            <textarea
-              value={desc}
-              onChange={(e) => e.target.value.length <= MAX_DESC && setDesc(e.target.value)}
-              placeholder="Describe the problem, location, and any context that helps authority resolve it."
-              rows={5}
-              className="w-full border border-gray-300 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-rose-300 resize-y bg-white"
-            />
-            <span className="text-xs text-gray-500 mt-1">{descCount}</span>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Severity</label>
-          <div className="grid grid-cols-3 gap-3">
-            {['low', 'medium', 'high'].map(level => (
-              <button
-                key={level}
-                type="button"
-                onClick={() => setSeverity(level)}
-                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition
-                  ${severity === level
-                    ? 'border-rose-500 text-rose-700 bg-rose-50'
-                    : 'border-gray-300 text-gray-700 hover:border-rose-300 hover:text-rose-700'}`}
-              >
-                {level === 'low' && 'Low'}
-                {level === 'medium' && 'Medium'}
-                {level === 'high' && 'High'}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="flex items-start gap-3">
-          <label className="inline-flex items-center cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={anonymous}
-              onChange={(e) => setAnonymous(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-400"
-            />
-            <span className="ml-2 text-sm text-gray-800 flex items-center">
-              Post as Anonymous
-              <Shield size={16} className="ml-2 text-rose-500" />
-            </span>
-          </label>
-          <p className="text-xs text-gray-500">
-            Your identity will be hidden from other citizens. Admins can still view your details for verification and action.
-          </p>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Images (optional)</label>
-          <div
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            className="border-2 border-dashed border-rose-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center bg-rose-50/40"
-          >
-            <UploadCloud className="mb-2" />
-            <p className="text-sm text-gray-700">
-              Drag & drop images here, or
-              <label className="text-rose-700 font-semibold cursor-pointer ml-1">
-                browse
-                <input
-                  type="file"
-                  accept={ACCEPTED_IMG_TYPES.join(',')}
-                  multiple
-                  className="hidden"
-                  onChange={onFileInputChange}
-                />
-              </label>
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Up to {MAX_IMAGES} images. PNG, JPG, JPEG, WEBP, GIF.</p>
-          </div>
-          {imagePreviews.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {imagePreviews.map((src, idx) => (
-                <div key={src} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white">
-                  <img src={src} alt={`upload-${idx}`} className="w-full h-32 object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removeImageAt(idx)}
-                    className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow"
-                    aria-label="Remove image"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        {composerError && <p className="text-sm text-red-600">{composerError}</p>}
-        <div className="flex items-center justify-between pt-2">
-          <button
-            type="button"
-            onClick={clearComposer}
-            className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
-            Clear
-          </button>
-          <button
-            type="button"
-            disabled={!canSubmit}
-            onClick={handleSubmitComplaint}
-            className={`px-5 py-2 rounded-xl font-semibold text-white transition
-              ${canSubmit ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-300 cursor-not-allowed'}`}
-          >
-            Submit Complaint
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'compose':
-        return renderCompose();
+        return <RegisterComplaint citizen={citizen} onSubmitSuccess={handleSubmitSuccess} />;
       case 'pending':
-        return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-rose-600 mb-4">Pending Complaints</h2>
-            <div className="space-y-6">
-              {pendingComplaints.map(complaint => (
-                <div key={complaint.id} className="bg-white shadow-xl rounded-2xl p-6 flex">
-                  <div className="flex flex-col items-center mr-6 space-y-1">
+       return (
+        <div className="p-6">
+          <h2 className="text-2xl font-bold text-rose-600 mb-6">Pending Complaints</h2>
+          <div className="space-y-6">
+            {pendingComplaints.map(complaint => (
+              <div
+                key={complaint.id}
+                className="bg-gradient-to-br from-white to-rose-50 shadow-2xl rounded-2xl p-6 flex hover:shadow-rose-200 transition-all duration-300 border border-rose-100"
+              >
+                {/* Voting Section (left side, premium style) */}
+                <div className="flex flex-col items-center mr-6 space-y-3">
+                  <button
+                    onClick={() => handleVote(complaint.id, 1)}
+                    className={`p-2 rounded-full bg-rose-50 hover:bg-rose-100 transition-colors duration-200 ${
+                      complaint.userVote === 1 ? 'text-rose-700' : 'text-gray-500'
+                    }`}
+                  >
+                    <ArrowUp size={28} />
+                  </button>
+                  <span className="text-xl font-extrabold text-rose-800">{complaint.votes}</span>
+                  <button
+                    onClick={() => handleVote(complaint.id, -1)}
+                    className={`p-2 rounded-full bg-rose-50 hover:bg-rose-100 transition-colors duration-200 ${
+                      complaint.userVote === -1 ? 'text-rose-700' : 'text-gray-500'
+                    }`}
+                  >
+                    <ArrowDown size={28} />
+                  </button>
+                </div>
+
+                {/* Complaint Content */}
+                <div className="flex-1">
+                  {/* Header */}
+                  <div className="flex justify-between items-center mb-4 border-b border-rose-100 pb-2">
+                    <span className="font-semibold text-rose-900 text-lg tracking-wide">{complaint.user}</span>
+                    <span className="text-sm font-medium text-gray-600">{complaint.time}</span>
+                  </div>
+
+                  {/* Title + Description */}
+                  <h3 className="text-xl font-bold text-gray-900 mb-3 leading-tight">{complaint.title || "Complaint Title"}</h3>
+                  <p className="text-gray-700 mb-6 text-base leading-relaxed">{complaint.content}</p>
+
+                  {/* Optional Image (centered with premium styling) */}
+                  {complaint.image && (
+                    <div className="flex justify-center mb-6">
+                      <img
+                        src={complaint.image}
+                        alt="Complaint"
+                        className="rounded-2xl max-h-72 object-cover shadow-lg border border-rose-200 hover:shadow-rose-300 transition-shadow duration-300"
+                      />
+                    </div>
+                  )}
+
+                  {/* Voting Buttons at Bottom (premium style) */}
+                  <div className="flex justify-end space-x-4 mt-auto">
                     <button
                       onClick={() => handleVote(complaint.id, 1)}
-                      className={`${complaint.userVote === 1 ? 'text-rose-600' : 'text-gray-400'} hover:text-rose-800`}
+                      className={`px-4 py-2 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors duration-200 ${
+                        complaint.userVote === 1 ? 'opacity-100' : 'opacity-80'
+                      }`}
                     >
-                      <ArrowUp size={24} />
+                      Upvote
                     </button>
-                    <span className="text-lg font-bold text-rose-900">{complaint.votes}</span>
                     <button
                       onClick={() => handleVote(complaint.id, -1)}
-                      className={`${complaint.userVote === -1 ? 'text-rose-600' : 'text-gray-400'} hover:text-rose-800`}
+                      className={`px-4 py-2 rounded-xl font-semibold text-white bg-rose-600 hover:bg-rose-700 transition-colors duration-200 ${
+                        complaint.userVote === -1 ? 'opacity-100' : 'opacity-80'
+                      }`}
                     >
-                      <ArrowDown size={24} />
+                      Downvote
                     </button>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex justify-between items-center mb-2">
-                      <span className="font-semibold text-rose-900 text-lg">{complaint.user}</span>
-                      <span className="text-sm text-gray-600">{complaint.time}</span>
-                    </div>
-                    <p className="text-gray-700">{complaint.content}</p>
-                  </div>
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
-        );
+        </div>
+      );
       case 'in-progress':
         return (
           <div className="p-6">
