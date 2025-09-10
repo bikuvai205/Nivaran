@@ -206,7 +206,7 @@ const CitizenDashboard = () => {
                               size={16}
                               className="mr-1 text-rose-500 flex-shrink-0"
                             />
-                            <span className="truncate max-w-[120px]">
+                            <span className="text-gray-700">
                               {complaint.location}
                             </span>
                           </div>
