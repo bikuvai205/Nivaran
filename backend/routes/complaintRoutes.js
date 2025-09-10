@@ -73,54 +73,77 @@ router.get("/pending", authMiddleware, async (req, res) => {
 });
 
 // POST /api/complaints/:id/vote
-router.post("/:id/vote", authMiddleware, async (req, res) => {
+router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    const { voteType } = req.body; // 1 = upvote, -1 = downvote, 0 = remove
-    const citizenId = req.user._id;
     const complaintId = req.params.id;
+    const { title, description, location } = req.body;
 
     const complaint = await Complaint.findById(complaintId);
-    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
-
-    // Find existing vote by this user
-    const existingVoteIndex = complaint.votes.findIndex(
-      (v) => v.user.toString() === citizenId.toString()
-    );
-
-    if (existingVoteIndex > -1) {
-      // If user already voted
-      if (voteType === 0) {
-        // Remove vote
-        complaint.votes.splice(existingVoteIndex, 1);
-      } else {
-        // Update vote
-        complaint.votes[existingVoteIndex].voteType = voteType;
-      }
-    } else if (voteType !== 0) {
-      // New vote
-      complaint.votes.push({ user: citizenId, voteType });
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
     }
 
-    // Recalculate upvotes & downvotes
-    complaint.upvotes = complaint.votes.filter((v) => v.voteType === 1).length;
-    complaint.downvotes = complaint.votes.filter((v) => v.voteType === -1).length;
+    // Ensure the logged-in user is the owner
+    // req.user may be a Mongoose document or plain object, compare strings
+    const ownerId = complaint.user.toString();
+    const requesterId = req.user._id ? req.user._id.toString() : req.user.toString();
+    if (ownerId !== requesterId) {
+      return res.status(403).json({ message: "Not authorized to edit this complaint" });
+    }
 
-    await complaint.save();
+    // Only allow edits when still pending
+    if (complaint.status !== "pending") {
+      return res.status(400).json({ message: "Only pending complaints can be edited" });
+    }
 
-    // Send response including this user's current vote
-    const userVote =
-      complaint.votes.find((v) => v.user.toString() === citizenId.toString())?.voteType || 0;
+    // Update allowed fields
+    if (typeof title === "string" && title.trim().length > 0) complaint.title = title.trim();
+    if (typeof description === "string" && description.trim().length > 0) complaint.description = description.trim();
+    if (typeof location === "string") complaint.location = location.trim();
 
-    res.json({
-      upvotes: complaint.upvotes,
-      downvotes: complaint.downvotes,
-      userVote,
-    });
+    const updated = await complaint.save();
+
+    // Return the updated document
+    res.json(updated);
   } catch (err) {
-    console.error("Vote error:", err);
-    res.status(500).json({ message: "Failed to update vote" });
+    console.error("Error updating complaint:", err);
+    res.status(500).json({ message: "Failed to update complaint" });
   }
 });
+// GET /api/complaints/mine - fetch complaints of logged-in citizen
+router.get("/mine", authMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.find({ user: req.user._id })
+      .sort({ createdAt: -1 });
+    res.json(complaints);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching complaints" });
+  }
+});
+// Delete complaint (only owner, only when status === 'pending')
+router.delete("/:id", authMiddleware, async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint) {
+      return res.status(404).json({ message: "Complaint not found" });
+    }
+
+    if (complaint.user.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ message: "Not authorized to delete this complaint" });
+    }
+
+    if (complaint.status !== "pending") {
+      return res.status(400).json({ message: "Only pending complaints can be deleted" });
+    }
+
+    await complaint.deleteOne();
+    res.json({ message: "Complaint deleted successfully" });
+  } catch (err) {
+    console.error("Error deleting complaint:", err);
+    res.status(500).json({ message: "Failed to delete complaint" });
+  }
+});
+
 
 
 module.exports = router;
