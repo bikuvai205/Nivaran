@@ -5,11 +5,26 @@ import * as tf from '@tensorflow/tfjs';
 import * as nsfwjs from 'nsfwjs';
 import { UploadCloud, X, Shield } from 'lucide-react';
 
+
 const MAX_TITLE = 120;
 const MAX_DESC = 2000;
 const MAX_IMAGES = 4;
 const ACCEPTED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
 const NSFW_THRESHOLD = 0.8; // Block images with >80% probability of NSFW content
+
+const COMPLAINT_TYPES = [
+  "Road Problem",
+  "Garbage/Waste",
+  "Water/Pollution",
+  "Electricity",
+  "Public Safety",
+  "Health&Sanitation",
+  "Traffic",
+  "Maintenance",
+  "Infrastructure",
+  "Environmental",
+  "Other"
+];
 
 const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   const [title, setTitle] = useState('');
@@ -17,6 +32,8 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   const [location, setLocation] = useState('');
   const [severity, setSeverity] = useState('medium');
   const [anonymous, setAnonymous] = useState(false);
+const [complaintType, setComplaintType] = useState(''); // replace `type`
+
   const [images, setImages] = useState([]);
   const [imagePreviews, setImagePreviews] = useState([]);
   const [composerError, setComposerError] = useState('');
@@ -48,10 +65,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       const img = new Image();
       const url = URL.createObjectURL(file);
       img.src = url;
-      await new Promise(resolve => {
-        img.onload = resolve;
-        img.onerror = resolve;
-      });
+      await new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
       const predictions = await nsfwModel.classify(img);
       URL.revokeObjectURL(url);
       const nsfwCategories = ['Porn', 'Hentai', 'Sexy'];
@@ -71,9 +85,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
     const files = Array.from(fileList || []);
     const validFiles = files.filter(f => ACCEPTED_IMG_TYPES.includes(f.type));
     const rejected = files.length - validFiles.length;
-    if (rejected > 0) {
-      setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
-    }
+    if (rejected > 0) setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
 
     const safeFiles = [];
     let nsfwDetected = false;
@@ -88,9 +100,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       }
     }
 
-    if (nsfwDetected) {
-      setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
-    }
+    if (nsfwDetected) setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
 
     const combined = [...images, ...safeFiles].slice(0, MAX_IMAGES);
     if (combined.length > MAX_IMAGES) setComposerError(`You can upload up to ${MAX_IMAGES} images.`);
@@ -102,14 +112,14 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   const onDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
   const removeImageAt = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
   const clearComposer = () => {
-    setTitle(''); setDesc(''); setLocation(''); setSeverity('medium'); setAnonymous(false); setImages([]); setComposerError('');
+    setTitle(''); setDesc(''); setLocation(''); setSeverity('medium'); setAnonymous(false); setComplaintType(''); setImages([]); setComposerError('');
   };
 
-  const canSubmit = title.trim() && desc.trim() && location.trim();
+  const canSubmit = title.trim() && desc.trim() && location.trim() && complaintType.trim();
 
   const handleSubmitComplaint = async () => {
     if (!canSubmit) {
-      setComposerError('Please provide a title, description, and location.');
+      setComposerError('Please provide a title, description, location, and type.');
       return;
     }
     try {
@@ -122,6 +132,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       formData.append('location', location.trim());
       formData.append('severity', severity);
       formData.append('anonymous', anonymous);
+      formData.append('complaintType', complaintType);
       images.forEach(img => formData.append('image', img));
 
       const res = await axios.post(
@@ -180,6 +191,21 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
             placeholder="Enter location of the issue"
             className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white"
           />
+        </div>
+
+        {/* Complaint Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Complaint Type</label>
+          <select
+            value={complaintType}
+            onChange={(e) => setComplaintType(e.target.value)}
+            className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white"
+          >
+            <option value="">Select type</option>
+            {COMPLAINT_TYPES.map((t) => (
+              <option key={t} value={t}>{t}</option>
+            ))}
+          </select>
         </div>
 
         {/* Severity */}

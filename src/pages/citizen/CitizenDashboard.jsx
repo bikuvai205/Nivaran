@@ -65,6 +65,7 @@ const CitizenDashboard = () => {
             title: c.title,
             content: c.description,
             location: c.location || "N/A",
+          complaintType: c.complaintType,
             severity: c.severity,
             upvotes: c.upvotes,
             downvotes: c.downvotes,
@@ -142,6 +143,7 @@ const CitizenDashboard = () => {
       title: newComplaint.title,
       content: newComplaint.description,
       location: newComplaint.location || "N/A",
+      complaintType: newComplaint.complaintType,
       severity: newComplaint.severity,
       upvotes: 0,
       downvotes: 0,
@@ -216,6 +218,7 @@ const CitizenDashboard = () => {
                     <h3 className="text-xl font-bold text-gray-900 mb-3">
                       {complaint.title}
                     </h3>
+                    <p className="text-sm text-rose-600 font-semibold mb-2">{complaint.complaintType}</p>
                     <hr className="border-gray-300 border-[1.2px] mb-3" />
                   </div>
 

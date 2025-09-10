@@ -10,7 +10,7 @@ const complaintSchema = new mongoose.Schema(
     anonymous: { type: Boolean, default: false },
     location: { type: String, required: true }, // added field
     image: { type: String },
-
+    complaintType: { type: String, required: true },
     // voting
     upvotes: { type: Number, default: 0 },
     downvotes: { type: Number, default: 0 },
