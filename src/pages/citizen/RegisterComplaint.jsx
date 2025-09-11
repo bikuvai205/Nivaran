@@ -12,8 +12,8 @@ const ACCEPTED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'
 const NSFW_THRESHOLD = 0.8;
 
 const COMPLAINT_TYPES = [
-  "Road Problem", "Garbage/Waste", "Water/Pollution", "Electricity",
-  "Public Safety", "Health&Sanitation", "Traffic", "Maintenance",
+  "Roads", "Garbage/Waste/Pollution", "Water", "Electricity",
+  "Electricity", "Street Animal", "Traffic", "Maintenance",
   "Infrastructure", "Environmental", "Other"
 ];
 

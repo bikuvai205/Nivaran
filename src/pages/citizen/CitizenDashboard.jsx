@@ -15,6 +15,7 @@ import {
 import RegisterComplaint from "./RegisterComplaint";
 import ComplaintFeed from "./ComplaintFeed";
 import MyComplaints from "./MyComplaints";
+import CitizenDashboardHome from "./CitizenDashboardHome";
 
 const CitizenDashboard = () => {
   const [citizen, setCitizen] = useState(null);
@@ -63,15 +64,7 @@ const CitizenDashboard = () => {
     switch (activeTab) {
       case "dashboard":
         return (
-          <div className="p-6">
-            <h2 className="text-2xl font-bold text-rose-600 mb-6">
-              Dashboard Overview
-            </h2>
-            <p className="text-gray-600">
-              📊 Here we will later add charts and analytics (bar chart, pie
-              chart, timelines, etc.).
-            </p>
-          </div>
+          <CitizenDashboardHome token={token} />
         );
 
       case "feed":

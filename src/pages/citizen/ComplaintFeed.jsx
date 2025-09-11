@@ -6,6 +6,7 @@ import { ArrowUp, ArrowDown, MapPin } from "lucide-react";
 const ComplaintFeed = ({ citizen, token }) => {
   const [complaints, setComplaints] = useState([]);
 
+  // Fetch pending complaints
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
@@ -44,6 +45,7 @@ const ComplaintFeed = ({ citizen, token }) => {
     if (citizen?._id) fetchComplaints();
   }, [citizen?._id, token]);
 
+  // Handle upvote/downvote
   const handleVote = async (id, voteType) => {
     try {
       // Optimistic UI update
@@ -66,7 +68,8 @@ const ComplaintFeed = ({ citizen, token }) => {
         })
       );
 
-      const res = await axios.post(
+      // Call backend
+      const res = await axios.put(
         `http://localhost:5000/api/complaints/${id}/vote`,
         { voteType },
         { headers: { Authorization: `Bearer ${token}` } }
@@ -74,7 +77,7 @@ const ComplaintFeed = ({ citizen, token }) => {
 
       // Sync with backend counts
       setComplaints((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...res.data } : c))
+        prev.map((c) => (c.id === id ? { ...c, upvotes: res.data.upvotes, downvotes: res.data.downvotes } : c))
       );
     } catch (err) {
       console.error("Vote error:", err);
