@@ -1,18 +1,20 @@
-// backend/routes/complaintRoutes.js
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const Complaint = require("../models/Complaint");
 const authMiddleware = require("../middleware/authMiddleware");
+const { adminAuthMiddleware } = require("../middleware/adminAuthMiddleware");
 
-// -------------------- MULTER SETUP --------------------
+// Multer setup
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/complaints"),
-  filename: (req, file, cb) => {
+  destination: function (req, file, cb) {
+    cb(null, "uploads/complaints");
+  },
+  filename: function (req, file, cb) {
     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
     cb(null, uniqueSuffix + path.extname(file.originalname));
-  }
+  },
 });
 const upload = multer({ storage });
 
@@ -33,14 +35,13 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       complaintType,
       upvotes: 0,
       downvotes: 0,
-      votes: [],
-      status: "pending"
+      status: "pending",
     });
 
     await complaint.save();
     res.status(201).json({ message: "Complaint submitted successfully", complaint });
-  } catch (err) {
-    console.error("Error creating complaint:", err);
+  } catch (error) {
+    console.error("Error creating complaint:", error);
     res.status(500).json({ message: "Failed to submit complaint" });
   }
 });
@@ -52,15 +53,17 @@ router.get("/pending", authMiddleware, async (req, res) => {
       .populate("user", "_id fullName")
       .sort({ createdAt: -1 });
 
-    // Add userVote for the logged-in citizen
-    const formatted = complaints.map(c => {
-      const vote = c.votes.find(v => v.user.toString() === req.user._id.toString());
-      return { ...c.toObject(), userVote: vote ? vote.voteType : 0 };
+    const formatted = complaints.map((c) => {
+      const vote = c.votes.find((v) => v.user.toString() === req.user._id);
+      return {
+        ...c.toObject(),
+        userVote: vote ? vote.voteType : 0,
+      };
     });
 
     res.json(formatted);
-  } catch (err) {
-    console.error("Error fetching pending complaints:", err);
+  } catch (error) {
+    console.error("Error fetching complaints:", error);
     res.status(500).json({ message: "Failed to fetch complaints" });
   }
 });
@@ -68,29 +71,31 @@ router.get("/pending", authMiddleware, async (req, res) => {
 // -------------------- VOTE COMPLAINT --------------------
 router.put("/:id/vote", authMiddleware, async (req, res) => {
   try {
-    const { voteType } = req.body; // 1 = upvote, -1 = downvote, 0 = remove vote
+    const { voteType } = req.body; // 1 = upvote, -1 = downvote, 0 = remove
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ message: "Complaint not found" });
 
     const existingVoteIndex = complaint.votes.findIndex(
-      v => v.user.toString() === req.user._id.toString()
+      (v) => v.user.toString() === req.user._id.toString()
     );
 
     if (existingVoteIndex > -1) {
-      // User already voted
-      if (voteType === 0) {
-        complaint.votes.splice(existingVoteIndex, 1); // remove vote
-      } else {
-        complaint.votes[existingVoteIndex].voteType = voteType; // update vote
-      }
-    } else if (voteType !== 0) {
-      // New vote
-      complaint.votes.push({ user: req.user._id, voteType });
-    }
+      const prevVote = complaint.votes[existingVoteIndex];
+      if (prevVote.voteType === 1) complaint.upvotes--;
+      if (prevVote.voteType === -1) complaint.downvotes--;
 
-    // Recalculate counts
-    complaint.upvotes = complaint.votes.filter(v => v.voteType === 1).length;
-    complaint.downvotes = complaint.votes.filter(v => v.voteType === -1).length;
+      if (voteType === 0) {
+        complaint.votes.splice(existingVoteIndex, 1);
+      } else {
+        complaint.votes[existingVoteIndex].voteType = voteType;
+        if (voteType === 1) complaint.upvotes++;
+        if (voteType === -1) complaint.downvotes++;
+      }
+    } else {
+      if (voteType === 1) complaint.upvotes++;
+      if (voteType === -1) complaint.downvotes++;
+      if (voteType !== 0) complaint.votes.push({ user: req.user._id, voteType });
+    }
 
     await complaint.save();
     res.json({ upvotes: complaint.upvotes, downvotes: complaint.downvotes });
@@ -107,7 +112,6 @@ router.put("/:id", authMiddleware, async (req, res) => {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ message: "Complaint not found" });
 
-    // Only owner can edit
     if (complaint.user.toString() !== req.user._id.toString())
       return res.status(403).json({ message: "Not authorized to edit this complaint" });
 
@@ -126,24 +130,22 @@ router.put("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// -------------------- GET MY COMPLAINTS --------------------
+// -------------------- GET MINE --------------------
 router.get("/mine", authMiddleware, async (req, res) => {
   try {
     const complaints = await Complaint.find({ user: req.user._id }).sort({ createdAt: -1 });
     res.json(complaints);
   } catch (err) {
-    console.error("Error fetching my complaints:", err);
-    res.status(500).json({ message: "Failed to fetch complaints" });
+    res.status(500).json({ message: "Error fetching complaints" });
   }
 });
 
-// -------------------- DELETE COMPLAINT (PENDING ONLY) --------------------
+// -------------------- DELETE COMPLAINT --------------------
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ message: "Complaint not found" });
 
-    // Only owner can delete
     if (complaint.user.toString() !== req.user._id.toString())
       return res.status(403).json({ message: "Not authorized to delete this complaint" });
 
@@ -155,6 +157,20 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   } catch (err) {
     console.error("Error deleting complaint:", err);
     res.status(500).json({ message: "Failed to delete complaint" });
+  }
+});
+
+// -------------------- ADMIN ROUTE --------------------
+router.get("/admin", adminAuthMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.find()
+      .populate("user", "fullName email")
+      .sort({ createdAt: -1 });
+
+    res.json(complaints);
+  } catch (err) {
+    console.error("Admin fetch error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
