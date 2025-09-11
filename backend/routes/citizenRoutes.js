@@ -5,7 +5,8 @@ const {
   loginCitizen,
   citizenDashboard,
   getAllCitizens,
-  deleteCitizenByEmail
+  deleteCitizenByEmail,
+   changePassword 
 } = require('../controllers/citizenController');
 
 const authMiddleware = require('../middleware/authMiddleware'); // check token
@@ -25,6 +26,8 @@ router.get('/', getAllCitizens);
 
 // --- Delete citizen by email ---
 router.delete("/email/:email", deleteCitizenByEmail);
+// --- Change Password (Protected) ---
+router.put("/change-password", authMiddleware, changePassword);
 
 // --- Citizen submits a complaint with image ---
 router.post("/complaints", upload.single("image"), (req, res) => {
@@ -49,5 +52,6 @@ router.post("/complaints", upload.single("image"), (req, res) => {
     res.status(500).json({ message: "Error uploading complaint", error });
   }
 });
+
 
 module.exports = router;
