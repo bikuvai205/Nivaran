@@ -46,43 +46,57 @@ const ComplaintFeed = ({ citizen, token }) => {
   }, [citizen?._id, token]);
 
   // Handle upvote/downvote
-  const handleVote = async (id, voteType) => {
-    try {
-      // Optimistic UI update
-      setComplaints((prev) =>
-        prev.map((c) => {
-          if (c.id !== id) return c;
+const handleVote = async (id, voteType) => {
+  try {
+    setComplaints((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c;
 
-          let up = c.upvotes;
-          let down = c.downvotes;
+        let newVote = voteType;
+        let up = c.upvotes;
+        let down = c.downvotes;
 
+        // If clicking same vote again, toggle off
+        if (c.userVote === voteType) {
+          newVote = 0;
+          if (voteType === 1) up--;
+          if (voteType === -1) down--;
+        } else {
+          // Remove previous vote if exists
           if (c.userVote === 1) up--;
           if (c.userVote === -1) down--;
 
-          if (c.userVote === voteType) return { ...c, upvotes: up, downvotes: down, userVote: 0 };
-
           if (voteType === 1) up++;
           if (voteType === -1) down++;
+        }
 
-          return { ...c, upvotes: up, downvotes: down, userVote: voteType };
-        })
-      );
+        return { ...c, upvotes: up, downvotes: down, userVote: newVote };
+      })
+    );
 
-      // Call backend
-      const res = await axios.put(
-        `http://localhost:5000/api/complaints/${id}/vote`,
-        { voteType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    // Determine voteType to send to backend (0 if removing vote)
+    const currentComplaint = complaints.find((c) => c.id === id);
+    const sendVote = currentComplaint.userVote === voteType ? 0 : voteType;
 
-      // Sync with backend counts
-      setComplaints((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, upvotes: res.data.upvotes, downvotes: res.data.downvotes } : c))
-      );
-    } catch (err) {
-      console.error("Vote error:", err);
-    }
-  };
+    const res = await axios.put(
+      `http://localhost:5000/api/complaints/${id}/vote`,
+      { voteType: sendVote },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    // Sync counts and userVote with backend
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c.id === id
+          ? { ...c, upvotes: res.data.upvotes, downvotes: res.data.downvotes, userVote: sendVote }
+          : c
+      )
+    );
+  } catch (err) {
+    console.error("Vote error:", err);
+  }
+};
+
 
   return (
     <div className="p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
