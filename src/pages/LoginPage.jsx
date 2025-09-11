@@ -27,6 +27,7 @@ const LoginPage = () => {
           password,
         });
         if (res.data.message?.toLowerCase().includes('login successful')) {
+          localStorage.setItem('adminToken', res.data.token);
           localStorage.setItem('isAdminLoggedIn', 'true');
           navigate('/homepage');
         } else {

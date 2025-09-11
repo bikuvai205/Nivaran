@@ -4,9 +4,10 @@ const router = express.Router();
 const multer = require("multer");
 const path = require("path");
 const Complaint = require("../models/Complaint");
-const authMiddleware = require("../middleware/authMiddleware");
+const  authMiddleware  = require("../middleware/authMiddleware");
+const { adminAuthMiddleware } = require("../middleware/adminAuthMiddleware");
 
-// Multer setup
+// Multer setup for image uploads
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, "uploads/complaints");
@@ -18,14 +19,14 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
-// POST route: create complaint
+// --------------------- CITIZEN ROUTES ---------------------
+
+// POST /api/complaints - submit complaint
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
-    const { title, description, severity, anonymous, location, complaintType } = req.body;
+    const { title, description, severity, anonymous, location, complaintType } =
+      req.body;
     const image = req.file ? req.file.filename : null;
-
-
-
 
     const complaint = new Complaint({
       user: req.user._id,
@@ -42,21 +43,35 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     });
 
     await complaint.save();
-    res.status(201).json({ message: "Complaint submitted successfully", complaint });
+    res
+      .status(201)
+      .json({ message: "Complaint submitted successfully", complaint });
   } catch (error) {
     console.error("Error creating complaint:", error);
     res.status(500).json({ message: "Failed to submit complaint" });
   }
 });
 
-// GET route: fetch all pending complaints
+// GET /api/complaints/mine - fetch complaints of logged-in citizen
+router.get("/mine", authMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.find({ user: req.user._id }).sort({
+      createdAt: -1,
+    });
+    res.json(complaints);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching complaints" });
+  }
+});
+
+// GET /api/complaints/pending - fetch pending complaints (for citizen dashboard)
 router.get("/pending", authMiddleware, async (req, res) => {
   try {
     const complaints = await Complaint.find({ status: "pending" })
       .populate("user", "_id fullName")
       .sort({ createdAt: -1 });
 
-    // add userVote for current logged-in citizen
+    // Add userVote for logged-in citizen
     const formatted = complaints.map((c) => {
       const vote = c.votes.find((v) => v.user.toString() === req.user._id);
       return {
@@ -72,69 +87,52 @@ router.get("/pending", authMiddleware, async (req, res) => {
   }
 });
 
-// POST /api/complaints/:id/vote
+// PUT /api/complaints/:id - edit complaint (only by owner, pending status)
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    const complaintId = req.params.id;
-    const { title, description, location } = req.body;
-
-    const complaint = await Complaint.findById(complaintId);
-    if (!complaint) {
+    const complaint = await Complaint.findById(req.params.id);
+    if (!complaint)
       return res.status(404).json({ message: "Complaint not found" });
-    }
 
-    // Ensure the logged-in user is the owner
-    // req.user may be a Mongoose document or plain object, compare strings
-    const ownerId = complaint.user.toString();
-    const requesterId = req.user._id ? req.user._id.toString() : req.user.toString();
-    if (ownerId !== requesterId) {
-      return res.status(403).json({ message: "Not authorized to edit this complaint" });
-    }
+    if (complaint.user.toString() !== req.user._id.toString())
+      return res
+        .status(403)
+        .json({ message: "Not authorized to edit this complaint" });
 
-    // Only allow edits when still pending
-    if (complaint.status !== "pending") {
-      return res.status(400).json({ message: "Only pending complaints can be edited" });
-    }
+    if (complaint.status !== "pending")
+      return res
+        .status(400)
+        .json({ message: "Only pending complaints can be edited" });
 
-    // Update allowed fields
-    if (typeof title === "string" && title.trim().length > 0) complaint.title = title.trim();
-    if (typeof description === "string" && description.trim().length > 0) complaint.description = description.trim();
-    if (typeof location === "string") complaint.location = location.trim();
+    const { title, description, location } = req.body;
+    if (title) complaint.title = title.trim();
+    if (description) complaint.description = description.trim();
+    if (location) complaint.location = location.trim();
 
     const updated = await complaint.save();
-
-    // Return the updated document
     res.json(updated);
   } catch (err) {
     console.error("Error updating complaint:", err);
     res.status(500).json({ message: "Failed to update complaint" });
   }
 });
-// GET /api/complaints/mine - fetch complaints of logged-in citizen
-router.get("/mine", authMiddleware, async (req, res) => {
-  try {
-    const complaints = await Complaint.find({ user: req.user._id })
-      .sort({ createdAt: -1 });
-    res.json(complaints);
-  } catch (err) {
-    res.status(500).json({ message: "Error fetching complaints" });
-  }
-});
-// Delete complaint (only owner, only when status === 'pending')
+
+// DELETE /api/complaints/:id - delete complaint (only by owner, pending)
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) {
+    if (!complaint)
       return res.status(404).json({ message: "Complaint not found" });
-    }
 
-    if (complaint.user.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: "Not authorized to delete this complaint" });
-    }
+    if (complaint.user.toString() !== req.user._id.toString())
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this complaint" });
 
-    if (complaint.status !== "pending") {
-      return res.status(400).json({ message: "Only pending complaints can be deleted" });
-    }
+    if (complaint.status !== "pending")
+      return res
+        .status(400)
+        .json({ message: "Only pending complaints can be deleted" });
 
     await complaint.deleteOne();
     res.json({ message: "Complaint deleted successfully" });
@@ -144,6 +142,20 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
+// --------------------- ADMIN ROUTES ---------------------
 
+// GET /api/complaints/admin - fetch all complaints (admin only)
+router.get("/admin", adminAuthMiddleware, async (req, res) => {
+  try {
+    const complaints = await Complaint.find()
+      .populate("user", "fullName email")
+      .sort({ createdAt: -1 });
+
+    res.json(complaints);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
 
 module.exports = router;
