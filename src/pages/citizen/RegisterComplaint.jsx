@@ -76,13 +76,12 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
     setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES));
 
     // Run NSFW check asynchronously
-    newImages.forEach(async (img, idx) => {
+    newImages.forEach(async (img) => {
       const { isSafe } = await checkNSFW(img.file);
-      setImages(prev => prev.map(i => 
+      setImages(prev => prev.map(i =>
         i.file === img.file ? { ...i, verifying: false, isSafe } : i
       ));
       if (!isSafe) setComposerError('Inappropriate image found. Please remove it.');
-       
     });
   };
 
@@ -200,6 +199,46 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
               <option key={t} value={t}>{t}</option>
             ))}
           </select>
+        </div>
+
+        {/* Severity */}
+        <div>
+          <label className="mb-2 block text-sm font-medium text-gray-700">Severity</label>
+          <div className="grid grid-cols-3 gap-3">
+            {['low', 'medium', 'high'].map((level) => (
+              <button
+                key={level}
+                type="button"
+                onClick={() => setSeverity(level)}
+                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition ${
+                  severity === level
+                    ? 'border-rose-500 bg-rose-50 text-rose-700'
+                    : 'border-gray-300 text-gray-700 hover:border-rose-300 hover:text-rose-700'
+                }`}
+              >
+                {level.charAt(0).toUpperCase() + level.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Anonymous */}
+        <div className="flex items-start gap-3">
+          <label className="inline-flex cursor-pointer select-none items-center">
+            <input
+              type="checkbox"
+              checked={anonymous}
+              onChange={(e) => setAnonymous(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-400"
+            />
+            <span className="ml-2 flex items-center text-sm text-gray-800">
+              Post as Anonymous
+              <Shield size={16} className="ml-2 text-rose-500" />
+            </span>
+          </label>
+          <p className="text-xs text-gray-500">
+            Your identity will be hidden from other citizens. Admins can still view your details for verification and action.
+          </p>
         </div>
 
         {/* Images */}
