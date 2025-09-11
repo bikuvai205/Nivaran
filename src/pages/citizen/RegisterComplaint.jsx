@@ -12,9 +12,9 @@ const ACCEPTED_IMG_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'
 const NSFW_THRESHOLD = 0.8;
 
 const COMPLAINT_TYPES = [
-  "Road Problem", "Garbage/Waste", "Water/Pollution", "Electricity",
-  "Public Safety", "Health&Sanitation", "Traffic", "Maintenance",
-  "Infrastructure", "Environmental", "Other"
+  "Roads", "Garbage/Waste/Pollution", "Water", "Electricity",
+  "Street Animal", "Traffic", "Maintenance", "Infrastructure",
+  "Environmental", "Others"
 ];
 
 const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
@@ -24,33 +24,26 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   const [severity, setSeverity] = useState('medium');
   const [anonymous, setAnonymous] = useState(false);
   const [complaintType, setComplaintType] = useState('');
-  const [images, setImages] = useState([]);
-  const [imagePreviews, setImagePreviews] = useState([]);
+  const [images, setImages] = useState([]); // {file, verifying, isSafe}
   const [composerError, setComposerError] = useState('');
   const [nsfwModel, setNsfwModel] = useState(null);
-
-  // Toast state
   const [toast, setToast] = useState(null);
 
-  // Load NSFWJS model
+  // Load NSFW model in background
   useEffect(() => {
-    const loadModel = async () => {
-      await tf.setBackend('cpu');
-      const model = await nsfwjs.load();
-      setNsfwModel(model);
-    };
-    loadModel();
+    (async () => {
+      try {
+        await tf.setBackend('cpu');
+        const model = await nsfwjs.load();
+        setNsfwModel(model);
+      } catch (err) {
+        console.error('NSFW model failed to load:', err);
+      }
+    })();
   }, []);
 
   const titleCount = useMemo(() => `${title.length}/${MAX_TITLE}`, [title]);
   const descCount = useMemo(() => `${desc.length}/${MAX_DESC}`, [desc]);
-
-  useEffect(() => {
-    imagePreviews.forEach(url => URL.revokeObjectURL(url));
-    const next = images.map(file => URL.createObjectURL(file));
-    setImagePreviews(next);
-    return () => next.forEach(url => URL.revokeObjectURL(url));
-  }, [images]);
 
   const checkNSFW = async (file) => {
     if (!nsfwModel) return { isSafe: true };
@@ -65,8 +58,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       const nsfwPrediction = predictions.find(pred =>
         nsfwCategories.includes(pred.className) && pred.probability >= NSFW_THRESHOLD
       );
-      if (nsfwPrediction) return { isSafe: false, nsfwType: nsfwPrediction.className };
-      return { isSafe: true };
+      return { isSafe: !nsfwPrediction };
     } catch (err) {
       console.error('NSFW check error:', err);
       return { isSafe: true };
@@ -80,34 +72,35 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
     const rejected = files.length - validFiles.length;
     if (rejected > 0) setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
 
-    const safeFiles = [];
-    let nsfwTypes = [];
-    for (const file of validFiles) {
-      const { isSafe, nsfwType } = await checkNSFW(file);
-      if (isSafe) safeFiles.push(file);
-      else if (nsfwType && !nsfwTypes.includes(nsfwType)) nsfwTypes.push(nsfwType);
-    }
-    if (nsfwTypes.length) setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
+    const newImages = validFiles.slice(0, MAX_IMAGES).map(f => ({ file: f, verifying: true, isSafe: true }));
+    setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES));
 
-    const combined = [...images, ...safeFiles].slice(0, MAX_IMAGES);
-    if (combined.length > MAX_IMAGES) setComposerError(`You can upload up to ${MAX_IMAGES} images.`);
-    setImages(combined);
+    // Run NSFW check asynchronously
+    newImages.forEach(async (img, idx) => {
+      const { isSafe } = await checkNSFW(img.file);
+      setImages(prev => prev.map(i => 
+        i.file === img.file ? { ...i, verifying: false, isSafe } : i
+      ));
+      if (!isSafe) setComposerError('Inappropriate image found. Please remove it.');
+       
+    });
   };
 
   const onFileInputChange = (e) => acceptFiles(e.target.files);
   const onDrop = (e) => { e.preventDefault(); e.stopPropagation(); acceptFiles(e.dataTransfer.files); };
   const onDragOver = (e) => { e.preventDefault(); e.stopPropagation(); };
   const removeImageAt = (idx) => setImages(prev => prev.filter((_, i) => i !== idx));
+
   const clearComposer = () => {
     setTitle(''); setDesc(''); setLocation(''); setSeverity('medium');
     setAnonymous(false); setComplaintType(''); setImages([]); setComposerError('');
   };
 
-  const canSubmit = title.trim() && desc.trim() && location.trim() && complaintType.trim();
+  const canSubmit = title.trim() && desc.trim() && location.trim() && complaintType.trim() && images.every(i => !i.verifying && i.isSafe);
 
   const handleSubmitComplaint = async () => {
     if (!canSubmit) {
-      setComposerError('Please provide a title, description, location, and type.');
+      setComposerError('Please provide title, description, location, type and ensure all images are safe.');
       return;
     }
     try {
@@ -121,7 +114,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       formData.append('severity', severity);
       formData.append('anonymous', anonymous);
       formData.append('complaintType', complaintType);
-      images.forEach(img => formData.append('image', img));
+      images.forEach(img => formData.append('image', img.file));
 
       const res = await axios.post('http://localhost:5000/api/complaints', formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
@@ -131,15 +124,11 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       if (onSubmitSuccess) onSubmitSuccess(newComplaint);
 
       clearComposer();
-
-      // ✅ Show success toast
       setToast({ message: 'Complaint submitted successfully!', type: 'success' });
       setTimeout(() => setToast(null), 4000);
     } catch (err) {
       console.error('Submit complaint error:', err);
       const message = err.response?.data?.message || 'Failed to submit complaint.';
-
-      // Show error toast
       setToast({ message, type: 'error' });
       setTimeout(() => setToast(null), 4000);
     }
@@ -149,8 +138,8 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
     <div className="p-6 relative">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 px-4 py-2 rounded-xl text-white font-semibold shadow-lg transition-transform transform
-          ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'} animate-slideIn`}
+        <div className={`fixed top-5 right-5 px-4 py-2 rounded-xl text-white font-semibold shadow-lg
+          ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}
         >
           {toast.message}
         </div>
@@ -193,7 +182,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Enter location of the issue"
+            placeholder="Enter location"
             className="w-full border border-gray-300 rounded-xl px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300 bg-white"
           />
         </div>
@@ -213,45 +202,6 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
           </select>
         </div>
 
-        {/* Severity */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Severity</label>
-          <div className="grid grid-cols-3 gap-3">
-            {['low', 'medium', 'high'].map(level => (
-              <button
-                key={level}
-                type="button"
-                onClick={() => setSeverity(level)}
-                className={`rounded-xl border px-4 py-2 text-sm font-semibold transition
-                  ${severity === level
-                    ? 'border-rose-500 text-rose-700 bg-rose-50'
-                    : 'border-gray-300 text-gray-700 hover:border-rose-300 hover:text-rose-700'}`}
-              >
-                {level.charAt(0).toUpperCase() + level.slice(1)}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Anonymous */}
-        <div className="flex items-start gap-3">
-          <label className="inline-flex items-center cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={anonymous}
-              onChange={(e) => setAnonymous(e.target.checked)}
-              className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-400"
-            />
-            <span className="ml-2 text-sm text-gray-800 flex items-center">
-              Post as Anonymous
-              <Shield size={16} className="ml-2 text-rose-500" />
-            </span>
-          </label>
-          <p className="text-xs text-gray-500">
-            Your identity will be hidden from other citizens. Admins can still view your details for verification and action.
-          </p>
-        </div>
-
         {/* Images */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">Images (optional)</label>
@@ -265,27 +215,24 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
               Drag & drop images here, or
               <label className="text-rose-700 font-semibold cursor-pointer ml-1">
                 browse
-                <input
-                  type="file"
-                  accept={ACCEPTED_IMG_TYPES.join(',')}
-                  multiple
-                  className="hidden"
-                  onChange={onFileInputChange}
-                />
+                <input type="file" accept={ACCEPTED_IMG_TYPES.join(',')} multiple className="hidden" onChange={onFileInputChange} />
               </label>
             </p>
             <p className="text-xs text-gray-500 mt-1">Up to {MAX_IMAGES} images. PNG, JPG, JPEG, WEBP, GIF.</p>
           </div>
-          {imagePreviews.length > 0 && (
+
+          {images.length > 0 && (
             <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {imagePreviews.map((src, idx) => (
-                <div key={src} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white">
-                  <img src={src} alt={`upload-${idx}`} className="w-full h-32 object-cover" />
+              {images.map((img, idx) => (
+                <div key={idx} className="relative group rounded-xl overflow-hidden border border-gray-200 bg-white">
+                  <img src={URL.createObjectURL(img.file)} alt={`upload-${idx}`} className="w-full h-32 object-cover" />
+                  {img.verifying && (
+                    <span className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full">Verifying...</span>
+                  )}
                   <button
                     type="button"
                     onClick={() => removeImageAt(idx)}
                     className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow"
-                    aria-label="Remove image"
                   >
                     <X size={16} />
                   </button>
@@ -300,19 +247,14 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-2">
-          <button
-            type="button"
-            onClick={clearComposer}
-            className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50"
-          >
+          <button type="button" onClick={clearComposer} className="px-4 py-2 rounded-xl border border-gray-300 text-gray-700 hover:bg-gray-50">
             Clear
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleSubmitComplaint}
-            className={`px-5 py-2 rounded-xl font-semibold text-white transition
-              ${canSubmit ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-300 cursor-not-allowed'}`}
+            className={`px-5 py-2 rounded-xl font-semibold text-white transition ${canSubmit ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-300 cursor-not-allowed'}`}
           >
             Submit Complaint
           </button>

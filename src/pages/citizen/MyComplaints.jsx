@@ -1,7 +1,7 @@
 // src/pages/citizen/MyComplaints.jsx
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { MapPin, ThumbsUp, ThumbsDown, Edit, Trash2 } from "lucide-react";
+import { MapPin, ArrowUp, ArrowDown, Edit, Trash2 } from "lucide-react";
 
 const MyComplaints = ({ citizen, token }) => {
   const [complaints, setComplaints] = useState([]);
@@ -153,11 +153,14 @@ const MyComplaints = ({ citizen, token }) => {
               <div className="px-6 py-3 bg-gray-50 border-t flex items-center justify-between">
                 <div className="flex space-x-6">
                   <div className="flex items-center text-gray-400 cursor-not-allowed">
-                    <ThumbsUp size={18} className="mr-1" />
-                    <span>{c.upvotes}</span>
+                  onMouseDown={e => e.preventDefault()}
+                  <span className="select-none">
+                    <ArrowUp size={18} className="mr-1" />
+                    {c.upvotes}</span>
                   </div>
                   <div className="flex items-center text-gray-400 cursor-not-allowed">
-                    <ThumbsDown size={18} className="mr-1" />
+                  onMouseDown={e => e.preventDefault()}
+                    <ArrowDown size={18} className="mr-1" />
                     <span>{c.downvotes}</span>
                   </div>
                 </div>

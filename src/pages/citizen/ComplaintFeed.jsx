@@ -6,6 +6,7 @@ import { ArrowUp, ArrowDown, MapPin } from "lucide-react";
 const ComplaintFeed = ({ citizen, token }) => {
   const [complaints, setComplaints] = useState([]);
 
+  // Fetch pending complaints
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
@@ -44,42 +45,60 @@ const ComplaintFeed = ({ citizen, token }) => {
     if (citizen?._id) fetchComplaints();
   }, [citizen?._id, token]);
 
-  const handleVote = async (id, voteType) => {
-    try {
-      // Optimistic UI update
-      setComplaints((prev) =>
-        prev.map((c) => {
-          if (c.id !== id) return c;
+  // Handle upvote/downvote
+ const handleVote = async (id, voteType) => {
+  try {
+    // Optimistic update: update frontend first
+    setComplaints((prev) =>
+      prev.map((c) => {
+        if (c._id !== id) return c;
 
-          let up = c.upvotes;
-          let down = c.downvotes;
+        let up = c.upvotes;
+        let down = c.downvotes;
+        let newVote;
 
+        // Toggle logic
+        if (c.userVote === voteType) {
+          newVote = 0; // remove vote
+          if (voteType === 1) up--;
+          if (voteType === -1) down--;
+        } else {
+          newVote = voteType;
           if (c.userVote === 1) up--;
           if (c.userVote === -1) down--;
-
-          if (c.userVote === voteType) return { ...c, upvotes: up, downvotes: down, userVote: 0 };
-
           if (voteType === 1) up++;
           if (voteType === -1) down++;
+        }
 
-          return { ...c, upvotes: up, downvotes: down, userVote: voteType };
-        })
-      );
+        return { ...c, upvotes: up, downvotes: down, userVote: newVote };
+      })
+    );
 
-      const res = await axios.post(
-        `http://localhost:5000/api/complaints/${id}/vote`,
-        { voteType },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+    // Send vote to backend
+    const res = await axios.post(
+      `http://localhost:5000/api/complaints/${id}/vote`,
+      { type: voteType },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      // Sync with backend counts
-      setComplaints((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, ...res.data } : c))
-      );
-    } catch (err) {
-      console.error("Vote error:", err);
-    }
-  };
+    // Sync frontend with backend data
+    setComplaints((prev) =>
+      prev.map((c) =>
+        c._id === id
+          ? {
+              ...c,
+              upvotes: res.data.upvotes,
+              downvotes: res.data.downvotes,
+              userVote: res.data.myVote === "upvote" ? 1 : res.data.myVote === "downvote" ? -1 : 0,
+            }
+          : c
+      )
+    );
+  } catch (err) {
+    console.error("Vote error:", err);
+  }
+};
+
 
   return (
     <div className="p-6 overflow-y-auto max-h-[calc(100vh-4rem)]">
