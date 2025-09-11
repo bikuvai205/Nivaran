@@ -46,26 +46,26 @@ const ComplaintFeed = ({ citizen, token }) => {
   }, [citizen?._id, token]);
 
   // Handle upvote/downvote
- const handleVote = async (id, voteType) => {
+const handleVote = async (id, voteType) => {
   try {
-    // Optimistic update: update frontend first
     setComplaints((prev) =>
       prev.map((c) => {
-        if (c._id !== id) return c;
+        if (c.id !== id) return c;
 
+        let newVote = voteType;
         let up = c.upvotes;
         let down = c.downvotes;
-        let newVote;
 
-        // Toggle logic
+        // If clicking same vote again, toggle off
         if (c.userVote === voteType) {
-          newVote = 0; // remove vote
+          newVote = 0;
           if (voteType === 1) up--;
           if (voteType === -1) down--;
         } else {
-          newVote = voteType;
+          // Remove previous vote if exists
           if (c.userVote === 1) up--;
           if (c.userVote === -1) down--;
+
           if (voteType === 1) up++;
           if (voteType === -1) down++;
         }
@@ -74,23 +74,21 @@ const ComplaintFeed = ({ citizen, token }) => {
       })
     );
 
-    // Send vote to backend
-    const res = await axios.post(
+    // Determine voteType to send to backend (0 if removing vote)
+    const currentComplaint = complaints.find((c) => c.id === id);
+    const sendVote = currentComplaint.userVote === voteType ? 0 : voteType;
+
+    const res = await axios.put(
       `http://localhost:5000/api/complaints/${id}/vote`,
-      { type: voteType },
+      { voteType: sendVote },
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    // Sync frontend with backend data
+    // Sync counts and userVote with backend
     setComplaints((prev) =>
       prev.map((c) =>
-        c._id === id
-          ? {
-              ...c,
-              upvotes: res.data.upvotes,
-              downvotes: res.data.downvotes,
-              userVote: res.data.myVote === "upvote" ? 1 : res.data.myVote === "downvote" ? -1 : 0,
-            }
+        c.id === id
+          ? { ...c, upvotes: res.data.upvotes, downvotes: res.data.downvotes, userVote: sendVote }
           : c
       )
     );
