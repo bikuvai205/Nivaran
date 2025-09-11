@@ -87,27 +87,19 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
     const files = Array.from(fileList || []);
     const validFiles = files.filter((f) => ACCEPTED_IMG_TYPES.includes(f.type));
     const rejected = files.length - validFiles.length;
-    if (rejected > 0) {
-      setComposerError('Some files were rejected (allowed: png, jpg, jpeg, webp, gif).');
-    }
-    const safeFiles = [];
-    const nsfwTypes = [];
-    for (const file of validFiles) {
-      const { isSafe, nsfwType } = await checkNSFW(file);
-      if (isSafe) {
-        safeFiles.push(file);
-      } else if (nsfwType && !nsfwTypes.includes(nsfwType)) {
-        nsfwTypes.push(nsfwType);
-      }
-    }
-    if (nsfwTypes.length) {
-      setComposerError(`Image rejected due to ${nsfwTypes.join(' and ')} content.`);
-    }
-    const combined = [...images, ...safeFiles].slice(0, MAX_IMAGES);
-    if (combined.length > MAX_IMAGES) {
-      setComposerError(`You can upload up to ${MAX_IMAGES} images.`);
-    }
-    setImages(combined);
+    if (rejected > 0) setComposerError(`Some files were rejected (allowed: png, jpg, jpeg, webp, gif).`);
+
+    const newImages = validFiles.slice(0, MAX_IMAGES).map(f => ({ file: f, verifying: true, isSafe: true }));
+    setImages(prev => [...prev, ...newImages].slice(0, MAX_IMAGES));
+
+    // Run NSFW check asynchronously
+    newImages.forEach(async (img) => {
+      const { isSafe } = await checkNSFW(img.file);
+      setImages(prev => prev.map(i =>
+        i.file === img.file ? { ...i, verifying: false, isSafe } : i
+      ));
+      if (!isSafe) setComposerError('Inappropriate image found. Please remove it.');
+    });
   };
 
   const onFileInputChange = (e) => acceptFiles(e.target.files);
@@ -239,6 +231,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
             ))}
           </select>
         </div>
+
         {/* Severity */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700">Severity</label>
@@ -259,6 +252,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
             ))}
           </div>
         </div>
+
         {/* Anonymous */}
         <div className="flex items-start gap-3">
           <label className="inline-flex cursor-pointer select-none items-center">
@@ -274,10 +268,10 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
             </span>
           </label>
           <p className="text-xs text-gray-500">
-            Your identity will be hidden from other citizens. Admins can still view your details for
-            verification and action.
+            Your identity will be hidden from other citizens. Admins can still view your details for verification and action.
           </p>
         </div>
+
         {/* Images */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-700">Images (optional)</label>

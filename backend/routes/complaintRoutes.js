@@ -175,30 +175,45 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
   }
 });
 
-// -------------------- ASSIGN AUTHORITY --------------------
-router.put("/:id/assign", adminAuthMiddleware, async (req, res) => {
+// -------------------- GET TOTAL COMPLAINTS PER DAY --------------------
+router.get("/stats/per-day", async (req, res) => {
   try {
-    const { authorityId } = req.body;
+    const complaints = await Complaint.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" ,   timezone: "Asia/Kathmandu", } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id": 1 } },
+      { $project: { _id: 0, date: "$_id", count: 1 } },
+    ]);
 
-    const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
-
-    complaint.assigned_to = authorityId;
-    complaint.status = "inprocess";
-
-    await complaint.save();
-
-    const updatedComplaint = await Complaint.findById(req.params.id)
-      .populate("user", "fullName email")
-      .populate("assigned_to", "name type email phone");
-
-    res.json({
-      message: "Authority assigned successfully",
-      complaint: updatedComplaint,
-    });
+    res.json(complaints);
   } catch (err) {
-    console.error("Assign authority error:", err);
-    res.status(500).json({ message: "Failed to assign authority" });
+    console.error("Error fetching complaints per day:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// -------------------- GET TOTAL COMPLAINTS PER HOUR --------------------
+router.get("/stats/complaints-per-hour", async (req, res) => {
+  try {
+    const complaints = await Complaint.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d %H:00", date: "$createdAt" ,   timezone: "Asia/Kathmandu", } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id": 1 } },
+      { $project: { _id: 0, hour: "$_id", count: 1 } },
+    ]);
+
+    res.json(complaints);
+  } catch (err) {
+    console.error("Error fetching complaints per hour:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
 

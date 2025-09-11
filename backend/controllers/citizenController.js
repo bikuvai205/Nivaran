@@ -121,6 +121,41 @@ const deleteCitizenByEmail = async (req, res) => {
   }
 };
 
+// Change password controller
+const changePassword = async (req, res) => {
+  if (!req.user || !req.user._id) {
+    return res.status(401).json({ message: "Unauthorized: no user info" });
+  }
+
+  const citizenId = req.user._id;
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ message: "Both current and new passwords are required" });
+  }
+
+  try {
+    const citizen = await Citizen.findById(citizenId).select("+password");
+
+    if (!citizen) return res.status(404).json({ message: "Citizen not found" });
+
+    const isCurrentMatch = await bcrypt.compare(currentPassword, citizen.password);
+    if (!isCurrentMatch) return res.status(401).json({ message: "Invalid current password" });
+
+    const isSamePassword = await bcrypt.compare(newPassword, citizen.password);
+    if (isSamePassword) return res.status(400).json({ message: "New password cannot be same as current" });
+
+    const salt = await bcrypt.genSalt(10);
+    citizen.password = await bcrypt.hash(newPassword, salt);
+    await citizen.save();
+
+    return res.status(200).json({ message: "Password changed successfully" });
+  } catch (err) {
+    console.error("Change Password Error:", err);
+    return res.status(500).json({ message: "Server error" });
+  }
+};
+
 
 
 
@@ -129,7 +164,8 @@ module.exports = {
   loginCitizen,
   citizenDashboard,
   getAllCitizens,
-  deleteCitizenByEmail
+  deleteCitizenByEmail,
+    changePassword
 };
 
 

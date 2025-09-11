@@ -9,7 +9,6 @@ const ManageComplaints = () => {
   const [sortField, setSortField] = useState("");
   const [selectedComplaint, setSelectedComplaint] = useState(null);
   const [authorities, setAuthorities] = useState([]);
-  const [assigning, setAssigning] = useState(false);
 
   const token = localStorage.getItem("adminToken");
 
@@ -51,9 +50,29 @@ const ManageComplaints = () => {
       );
       setSelectedComplaint(null);
     } catch (err) {
-      console.error("Assign error:", err.response?.data || err);
-    } finally {
-      setAssigning(false);
+      console.error(err.response?.data || err);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this complaint?")) return;
+    try {
+      await axios.delete(`http://localhost:5000/api/complaints/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setComplaints((prev) => prev.filter((c) => c._id !== id));
+    } catch (err) {
+      console.error(err.response?.data || err);
+    }
+  };
+
+  const handleAssignAuthority = async (complaintId, authorityId) => {
+    try {
+      const updatedComplaint = { ...complaints.find((c) => c._id === complaintId), assigned_to: authorityId };
+      await updateComplaint(updatedComplaint);
+      alert(`Assigned authority to complaint ID: ${complaintId}`);
+    } catch (err) {
+      console.error(err.response?.data || err);
     }
   };
 
@@ -72,6 +91,9 @@ const ManageComplaints = () => {
       if (sortField === "upvotes" || sortField === "popular") {
         return (b.upvotes || 0) - (a.upvotes || 0);
       }
+      if (sortField === "anonymity") {
+        return (a.user?.isAnonymous === true ? -1 : 1);
+      }
       return 0;
     });
   }, [filteredComplaints, sortField]);
@@ -83,11 +105,7 @@ const ManageComplaints = () => {
       medium: "bg-yellow-100 text-yellow-800",
       high: "bg-red-100 text-red-800",
     };
-    return (
-      <span className={`${base} ${map[severity] || "bg-gray-100 text-gray-800"}`}>
-        {severity}
-      </span>
-    );
+    return <span className={`${base} ${map[severity] || "bg-gray-100 text-gray-800"}`}>{severity}</span>;
   };
 
   if (loading) return <p className="text-center mt-10 text-gray-600">Loading complaints...</p>;
@@ -120,6 +138,7 @@ const ManageComplaints = () => {
               <option value="popular">Popular</option>
               <option value="severity">Severity</option>
               <option value="upvotes">Upvotes</option>
+              <option value="anonymity">Anonymity</option>
             </select>
           </div>
         </div>
@@ -141,14 +160,16 @@ const ManageComplaints = () => {
                 <div className="p-5 space-y-3">
                   <div className="flex justify-between items-center">
                     <p className="text-gray-700 text-sm font-medium">
-                      {c.user?.fullName || "User"}
+                      {c.user?.isAnonymous
+                        ? `Anonymous (${c.user?.username || "user"})`
+                        : c.user?.fullName || "User"}
                     </p>
                     {getSeverityBadge(c.severity)}
                   </div>
 
                   <p className="text-gray-900 font-semibold text-lg">{c.title}</p>
 
-                  {c.status && (
+                  {c.status && c.status !== "pending" && (
                     <p className="text-sm text-gray-600">
                       <strong>Status:</strong> {c.status}
                     </p>
@@ -158,6 +179,9 @@ const ManageComplaints = () => {
                     <strong>Assigned To:</strong> {c.assigned_to?.name || "Unassigned"}
                   </p>
 
+                  <p className="text-sm text-gray-600">
+                    <strong>Upvotes:</strong> {c.upvotes || 0}
+                  </p>
 
                   {c.image && (
                     <img
@@ -168,16 +192,30 @@ const ManageComplaints = () => {
                     />
                   )}
                 </div>
-                <div className="flex justify-end items-center p-4 bg-gray-50 border-t border-gray-100">
+                <div className="flex justify-between items-center p-4 bg-gray-50 border-t border-gray-100">
                   <button
-                    className="px-3 py-1 text-sm rounded-lg bg-green-500 text-white hover:bg-green-600 shadow"
+                    className="px-3 py-1 text-sm rounded-lg bg-red-500 text-white hover:bg-red-600 shadow"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedComplaint(c);
+                      handleDelete(c._id);
                     }}
                   >
-                    Assign Authority
+                    Delete
                   </button>
+                  <select
+                    onChange={(e) => handleAssignAuthority(c._id, e.target.value)}
+                    className="border rounded px-3 py-2 shadow focus:ring-2 focus:ring-rose-500"
+                    defaultValue=""
+                  >
+                    <option value="" disabled>
+                      Assign Authority
+                    </option>
+                    {authorities.map((auth) => (
+                      <option key={auth._id} value={auth._id}>
+                        {auth.name}
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </motion.div>
             ))
@@ -187,7 +225,7 @@ const ManageComplaints = () => {
         </div>
       </div>
 
-      {/* Assign Authority Modal */}
+      {/* Complaint Modal */}
       <AnimatePresence>
         {selectedComplaint && (
           <motion.div
@@ -209,21 +247,7 @@ const ManageComplaints = () => {
                 ✕
               </button>
               <h2 className="text-2xl font-bold mb-4">{selectedComplaint.title}</h2>
-              <p className="mb-4 text-gray-700">
-                Select authority to assign this complaint (status will change to <strong>inprocess</strong>):
-              </p>
-              <div className="space-y-2">
-                {authorities.map((auth) => (
-                  <button
-                    key={auth._id}
-                    disabled={assigning}
-                    className="w-full px-4 py-2 rounded-xl bg-green-500 text-white hover:bg-green-600 transition"
-                    onClick={() => assignAuthority(selectedComplaint._id, auth._id)}
-                  >
-                    {auth.name} ({auth.type})
-                  </button>
-                ))}
-              </div>
+              {/* Modal details can be expanded here */}
             </motion.div>
           </motion.div>
         )}
