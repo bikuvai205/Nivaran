@@ -153,13 +153,12 @@ const MyComplaints = ({ citizen, token }) => {
               <div className="px-6 py-3 bg-gray-50 border-t flex items-center justify-between">
                 <div className="flex space-x-6">
                   <div className="flex items-center text-gray-400 cursor-not-allowed">
-                  onMouseDown={e => e.preventDefault()}
-                  <span className="select-none">
                     <ArrowUp size={18} className="mr-1" />
+                  <span c>
                     {c.upvotes}</span>
                   </div>
                   <div className="flex items-center text-gray-400 cursor-not-allowed">
-                  onMouseDown={e => e.preventDefault()}
+                
                     <ArrowDown size={18} className="mr-1" />
                     <span>{c.downvotes}</span>
                   </div>
