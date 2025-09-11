@@ -174,4 +174,46 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
   }
 });
 
+// -------------------- GET TOTAL COMPLAINTS PER DAY --------------------
+router.get("/stats/per-day", async (req, res) => {
+  try {
+    const complaints = await Complaint.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" ,   timezone: "Asia/Kathmandu", } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id": 1 } },
+      { $project: { _id: 0, date: "$_id", count: 1 } },
+    ]);
+
+    res.json(complaints);
+  } catch (err) {
+    console.error("Error fetching complaints per day:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// -------------------- GET TOTAL COMPLAINTS PER HOUR --------------------
+router.get("/stats/complaints-per-hour", async (req, res) => {
+  try {
+    const complaints = await Complaint.aggregate([
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d %H:00", date: "$createdAt" ,   timezone: "Asia/Kathmandu", } },
+          count: { $sum: 1 },
+        },
+      },
+      { $sort: { "_id": 1 } },
+      { $project: { _id: 0, hour: "$_id", count: 1 } },
+    ]);
+
+    res.json(complaints);
+  } catch (err) {
+    console.error("Error fetching complaints per hour:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 module.exports = router;
