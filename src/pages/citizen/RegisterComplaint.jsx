@@ -53,7 +53,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   // Handle image previews
   useEffect(() => {
     imagePreviews.forEach((url) => URL.revokeObjectURL(url));
-    const next = images.map((file) => URL.createObjectURL(file));
+    const next = images.map((imgObj) => URL.createObjectURL(imgObj.file));
     setImagePreviews(next);
     return () => next.forEach((url) => URL.revokeObjectURL(url));
   }, [images]);

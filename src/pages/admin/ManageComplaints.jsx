@@ -114,7 +114,7 @@ const ManageComplaints = () => {
   return (
     <div className="p-6 min-h-screen bg-gradient-to-br from-rose-50 via-white to-rose-100">
       <h1 className="text-4xl font-bold mb-8 text-center text-rose-800">
-        Manage Complaints
+        Assign Complaints
       </h1>
 
       {/* Toggle */}
