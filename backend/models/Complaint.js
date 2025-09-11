@@ -20,6 +20,7 @@ const complaintSchema = new mongoose.Schema(
         voteType: { type: Number, enum: [1, -1] }, // 1 = upvote, -1 = downvote
       },
     ],
+assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: "Authority", default: null },
 
     status: {
       type: String,
