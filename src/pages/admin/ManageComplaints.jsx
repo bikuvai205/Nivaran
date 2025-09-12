@@ -1,6 +1,8 @@
+// src/pages/admin/ManageComplaints.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
+import { ArrowUp, ArrowDown, MapPin } from "lucide-react";
 
 const ManageComplaints = () => {
   const [complaints, setComplaints] = useState([]);
@@ -13,7 +15,6 @@ const ManageComplaints = () => {
 
   const token = localStorage.getItem("adminToken");
 
-  // Fetch complaints and authorities
   useEffect(() => {
     if (!token) return;
 
@@ -39,15 +40,13 @@ const ManageComplaints = () => {
     fetchData();
   }, [token]);
 
-  // Assign authority to complaint
+  // Assign authority
   const handleAssignAuthority = async (complaintId, authorityId) => {
     try {
       const res = await axios.post(
         "http://localhost:5000/api/complaints/assign",
         { complaintId, authorityId },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       const updatedComplaint = res.data.updatedComplaint;
@@ -65,7 +64,7 @@ const ManageComplaints = () => {
     }
   };
 
-  // Filter based on toggle
+  // Filter + search
   const filteredComplaints = useMemo(() => {
     return complaints.filter(
       (c) =>
@@ -74,26 +73,27 @@ const ManageComplaints = () => {
     );
   }, [complaints, searchTerm, showAssigned]);
 
-  // Sort filtered complaints
-  const sortedComplaints = useMemo(() => {
-    return [...filteredComplaints].sort((a, b) => {
-      if (sortField === "severity") {
-        const order = { low: 1, medium: 2, high: 3 };
-        return (order[b.severity] || 0) - (order[a.severity] || 0);
-      }
-      if (sortField === "upvotes" || sortField === "popular") {
-        return (b.upvotes || 0) - (a.upvotes || 0);
-      }
-      if (sortField === "anonymity") {
-        return a.user?.isAnonymous === true ? -1 : 1;
-      }
-      return 0;
-    });
-  }, [filteredComplaints, sortField]);
+ // Sort
+const sortedComplaints = useMemo(() => {
+  return [...filteredComplaints].sort((a, b) => {
+    if (sortField === "severity") {
+      const order = { low: 1, medium: 2, high: 3 };
+      return (order[b.severity?.toLowerCase()] || 0) - (order[a.severity?.toLowerCase()] || 0);
+    }
+    if (sortField === "popular") {
+      return (b.upvotes || 0) - (a.upvotes || 0);
+    }
+    if (sortField === "anonymity") {
+      // true → 1, false → 0
+      return (b.anonymous === true) - (a.anonymous === true);
+    }
+    return 0;
+  });
+}, [filteredComplaints, sortField]);
 
-  // Badge for severity
+
   const getSeverityBadge = (severity) => {
-    const base = "px-2 py-1 rounded-full text-xs font-semibold";
+    const base = "px-2 py-1 rounded-full text-xs font-semibold capitalize";
     const map = {
       low: "bg-green-100 text-green-800",
       medium: "bg-yellow-100 text-yellow-800",
@@ -106,31 +106,21 @@ const ManageComplaints = () => {
     );
   };
 
-  if (loading)
+  if (loading) {
     return (
       <p className="text-center mt-10 text-gray-600">Loading complaints...</p>
     );
+  }
 
   return (
-    <div className="p-6 min-h-screen bg-gradient-to-br from-rose-50 via-white to-rose-100">
-      <h1 className="text-4xl font-bold mb-8 text-center text-rose-800">
+    <div className="p-6 overflow-y-auto max-h-[calc(100vh-4rem)] bg-gradient-to-br from-rose-50 via-white to-rose-100">
+      <h2 className="text-3xl font-bold text-rose-700 mb-6 text-center">
         Assign Complaints
-      </h1>
-
-      {/* Toggle */}
-      <div className="flex items-center gap-2 mb-4">
-        <span className="text-gray-700 font-medium">Show Assigned:</span>
-        <input
-          type="checkbox"
-          checked={showAssigned}
-          onChange={() => setShowAssigned(!showAssigned)}
-          className="w-5 h-5 rounded"
-        />
-      </div>
+      </h2>
 
       <div className="flex gap-6">
-        {/* Sidebar: Search & Sort */}
-        <div className="w-1/4 bg-white rounded-2xl p-5 shadow-xl border border-rose-100 space-y-4">
+        {/* Sidebar */}
+        <div className="w-1/4 bg-white rounded-2xl p-5 shadow-lg border border-rose-100 space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Search
@@ -155,9 +145,17 @@ const ManageComplaints = () => {
               <option value="">Sort by</option>
               <option value="popular">Popular</option>
               <option value="severity">Severity</option>
-              <option value="upvotes">Upvotes</option>
               <option value="anonymity">Anonymity</option>
             </select>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={showAssigned}
+              onChange={() => setShowAssigned(!showAssigned)}
+              className="w-5 h-5 rounded"
+            />
+            <span className="text-gray-700 font-medium">Show Assigned</span>
           </div>
         </div>
 
@@ -171,55 +169,131 @@ const ManageComplaints = () => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0 }}
-                whileHover={{ scale: 1.02 }}
-                className="bg-white rounded-2xl shadow-md hover:shadow-2xl border border-gray-100 cursor-pointer overflow-hidden"
+                className="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden hover:shadow-2xl transition-shadow duration-300"
               >
-                <div className="p-5 space-y-3">
-                  <div className="flex justify-between items-center">
-                    <p className="text-gray-700 text-sm font-medium">
-                      {c.user?.isAnonymous
-                        ? `Anonymous (${c.user?.username || "user"})`
-                        : c.user?.fullName || "User"}
-                    </p>
-                    {getSeverityBadge(c.severity)}
-                  </div>
+                <div className="px-6 pt-4">
+                 {/* User + meta */}
+<div className="flex justify-between mb-2 items-start">
+  {/* Left Side: User */}
+  <div className="flex items-center gap-2">
+    <span className="font-semibold text-blue-800">
+      {c.user?.fullName || c.user?.username || "Unknown User"}
+    </span>
 
-                  <p className="text-gray-900 font-semibold text-lg">
+    {c.anonymous && (
+      <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800 font-medium">
+        Anonymous
+      </span>
+    )}
+  </div>
+
+  {/* Right Side: Time + Location */}
+  <div className="flex flex-col items-end text-sm text-gray-500">
+    <span>{new Date(c.createdAt).toLocaleString()}</span>
+    {c.location && (
+      <div className="flex items-center mt-1">
+        <MapPin size={16} className="mr-1 text-rose-500 flex-shrink-0" />
+        <span className="text-gray-700">{c.location}</span>
+      </div>
+    )}
+  </div>
+</div>
+
+{/* Metadata badges (centered below) */}
+{/* Metadata badges (centered below) */}
+<div className="flex justify-center gap-3 mt-2 mb-3">
+  {/* Severity */}
+  <span
+    className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${
+      c.severity === "high"
+        ? "bg-red-100 text-red-700"
+        : c.severity === "medium"
+        ? "bg-yellow-100 text-yellow-700"
+        : "bg-green-100 text-green-700"
+    }`}
+  >
+    {c.severity || "N/A"}
+  </span>
+
+  {/* Status */}
+  <span
+    className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${
+      c.status === "Resolved"
+        ? "bg-green-100 text-green-700"
+        : c.status === "In Progress"
+        ? "bg-blue-100 text-blue-700"
+        : "bg-yellow-100 text-yellow-700"
+    }`}
+  >
+    {c.status || "Pending"}
+  </span>
+
+  {/* Assigned */}
+  <span
+    className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-32 text-center capitalize ${
+      c.assigned_to
+        ? "bg-indigo-100 text-indigo-700"
+        : "bg-gray-200 text-gray-700"
+    }`}
+  >
+    {c.assigned_to?.name
+      ? `${c.assigned_to.name} (${c.assigned_to.type})`
+      : "Unassigned"}
+  </span>
+</div>
+
+
+
+
+
+
+                  <h3 className="text-xl font-bold text-gray-900 mb-1">
                     {c.title}
+                  </h3>
+                  <p className="text-sm text-rose-600 font-semibold mb-2">
+                    {c.complaintType}
                   </p>
+                  <hr className="border-gray-300 border-[1.2px] mb-3" />
+                </div>
 
-                  {c.status && (
-                    <p className="text-sm text-gray-600">
-                      <strong>Status:</strong> {c.status}
-                    </p>
-                  )}
-
-                  <p className="text-sm text-gray-600">
-                    <strong>Assigned To:</strong>{" "}
-                    {c.assigned_to?.name
-                      ? `${c.assigned_to.name} (${c.assigned_to.type})`
-                      : "Unassigned"}
-                  </p>
-
+                <div className="px-6 pb-4">
+                  <p className="text-gray-700 mb-3">{c.description}</p>
                   {c.image && (
-                    <img
-                      src={`http://localhost:5000/uploads/complaints/${c.image}`}
-                      alt="Complaint"
-                      className="w-full h-52 object-cover rounded-xl border border-gray-100"
-                      loading="lazy"
-                    />
+                    <div className="flex justify-center bg-gray-50 rounded-xl overflow-hidden">
+                      <img
+                        src={`http://localhost:5000/uploads/complaints/${c.image}`}
+                        alt="Complaint"
+                        className="max-h-[400px] w-auto object-contain"
+                      />
+                    </div>
                   )}
                 </div>
-                {!c.assigned_to && (
-                  <div className="flex justify-end items-center p-4 bg-gray-50 border-t border-gray-100">
+
+                {/* Footer */}
+                <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50">
+                  {/* Upvote / downvote */}
+                  <div className="flex items-center space-x-6">
+                    <div className="flex items-center space-x-2">
+                      <ArrowUp size={24} strokeWidth={3} className="text-blue-600" />
+                      <span className="font-semibold text-gray-700">{c.upvotes}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <ArrowDown size={24} strokeWidth={3} className="text-red-600" />
+                      <span className="font-semibold text-gray-700">{c.downvotes}</span>
+                    </div>
+                  </div>
+
+                
+
+                  {!c.assigned_to && (
                     <button
                       className="px-4 py-2 text-sm rounded-lg bg-rose-600 text-white hover:bg-rose-700 shadow"
                       onClick={() => setSelectedComplaint(c)}
                     >
-                      Assign Authority
+                      Assign
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </motion.div>
             ))
           ) : (
@@ -228,7 +302,7 @@ const ManageComplaints = () => {
         </div>
       </div>
 
-      {/* Assign Authority Modal */}
+      {/* Assign Modal */}
       <AnimatePresence>
         {selectedComplaint && (
           <motion.div
@@ -249,11 +323,9 @@ const ManageComplaints = () => {
               >
                 ✕
               </button>
-
               <h2 className="text-xl font-bold mb-4 text-rose-700">
                 Assign Authority
               </h2>
-
               <div className="space-y-3 max-h-60 overflow-y-auto">
                 {authorities.length > 0 ? (
                   authorities.map((auth) => (
@@ -263,11 +335,13 @@ const ManageComplaints = () => {
                     >
                       <div>
                         <p className="text-gray-800 font-medium">{auth.type}</p>
-                        <p className="text-gray-800 font-medium">{auth.username}</p>
+                        <p className="text-gray-600">{auth.username}</p>
                       </div>
                       <button
                         className="px-3 py-1 text-sm bg-rose-500 text-white rounded-lg hover:bg-rose-600"
-                        onClick={() => handleAssignAuthority(selectedComplaint._id, auth._id)}
+                        onClick={() =>
+                          handleAssignAuthority(selectedComplaint._id, auth._id)
+                        }
                       >
                         Select
                       </button>
