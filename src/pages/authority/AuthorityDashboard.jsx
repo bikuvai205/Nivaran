@@ -44,7 +44,7 @@ const AuthorityDashboard = () => {
           <p className="font-semibold text-rose-700">{authority.username || "Authority User"}</p>
           <p className="text-sm text-gray-600">{authority.email || "email@example.com"}</p>
         </div>
-        <h2 className="text-2xl font-extrabold text-rose-700">Authority({authority.name || "Authority"})</h2>
+        <h2 className="text-2xl font-extrabold text-rose-700">Authority ({authority.name || "Authority"})</h2>
         <button
           onClick={handleLogout}
           className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-medium rounded-lg shadow-md transition"
