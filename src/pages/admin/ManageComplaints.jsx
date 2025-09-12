@@ -1,34 +1,28 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { ArrowUp, ArrowDown, MapPin } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 const ManageComplaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [sortField, setSortField] = useState("");
-  const [selectedComplaint, setSelectedComplaint] = useState(null);
-  const [authorities, setAuthorities] = useState([]);
   const [showAssigned, setShowAssigned] = useState(false);
 
   const token = localStorage.getItem("adminToken");
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!token) return;
 
     const fetchData = async () => {
       try {
-        const [complaintsRes, authoritiesRes] = await Promise.all([
-          axios.get("http://localhost:5000/api/complaints/admin", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          axios.get("http://localhost:5000/api/authorities", {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-        ]);
-        setComplaints(complaintsRes.data);
-        setAuthorities(authoritiesRes.data);
+        const res = await axios.get("http://localhost:5000/api/complaints/admin", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setComplaints(res.data);
       } catch (err) {
         console.error(err);
       } finally {
@@ -38,30 +32,6 @@ const ManageComplaints = () => {
 
     fetchData();
   }, [token]);
-
-  // Assign authority
-  const handleAssignAuthority = async (complaintId, authorityId) => {
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/complaints/assign",
-        { complaintId, authorityId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      const updatedComplaint = res.data.updatedComplaint;
-      if (!updatedComplaint) return;
-
-      setComplaints((prev) =>
-        prev.map((c) => (c._id === complaintId ? updatedComplaint : c))
-      );
-
-      setSelectedComplaint(null);
-      alert(res.data.message || "Authority assigned successfully");
-    } catch (err) {
-      console.error("Error assigning authority:", err);
-      alert("Failed to assign authority");
-    }
-  };
 
   // Filter + search
   const filteredComplaints = useMemo(() => {
@@ -83,7 +53,6 @@ const ManageComplaints = () => {
         return (b.upvotes || 0) - (a.upvotes || 0);
       }
       if (sortField === "anonymity") {
-        // true → 1, false → 0
         return (b.anonymous === true) - (a.anonymous === true);
       }
       return 0;
@@ -105,9 +74,7 @@ const ManageComplaints = () => {
   };
 
   if (loading) {
-    return (
-      <p className="text-center mt-10 text-gray-600">Loading complaints...</p>
-    );
+    return <p className="text-center mt-10 text-gray-600">Loading complaints...</p>;
   }
 
   return (
@@ -123,9 +90,7 @@ const ManageComplaints = () => {
         {/* Fixed Sidebar */}
         <div className="fixed top-16 w-1/4 bg-rose-50 bg-opacity-80 rounded-2xl p-5 shadow-lg border border-rose-100 space-y-4 h-[calc(100vh-4rem)]">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Search
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Search</label>
             <input
               type="text"
               value={searchTerm}
@@ -135,9 +100,7 @@ const ManageComplaints = () => {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Sort By
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
             <select
               className="w-full rounded-xl border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-rose-300"
               value={sortField}
@@ -176,7 +139,6 @@ const ManageComplaints = () => {
                   <div className="px-6 pt-4">
                     {/* User + meta */}
                     <div className="flex justify-between mb-2 items-start">
-                      {/* Left Side: User */}
                       <div className="flex items-center gap-2">
                         <span className="font-semibold text-blue-800">
                           {c.user?.fullName || c.user?.username || "Unknown User"}
@@ -188,7 +150,6 @@ const ManageComplaints = () => {
                         )}
                       </div>
 
-                      {/* Right Side: Time + Location */}
                       <div className="flex flex-col items-end text-sm text-gray-500">
                         <span>{new Date(c.createdAt).toLocaleString()}</span>
                         {c.location && (
@@ -200,54 +161,19 @@ const ManageComplaints = () => {
                       </div>
                     </div>
 
-                    {/* Metadata badges (centered below) */}
+                    {/* Metadata badges */}
                     <div className="flex justify-center gap-3 mt-2 mb-3">
-                      {/* Severity */}
-                      <span
-                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${
-                          c.severity === "high"
-                            ? "bg-red-100 text-red-700"
-                            : c.severity === "medium"
-                            ? "bg-yellow-100 text-yellow-700"
-                            : "bg-green-100 text-green-700"
-                        }`}
-                      >
-                        {c.severity || "N/A"}
-                      </span>
-
-                      {/* Status */}
-                      <span
-                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${
-                          c.status === "Resolved"
-                            ? "bg-green-100 text-green-700"
-                            : c.status === "In Progress"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
-                      >
+                      {getSeverityBadge(c.severity)}
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${c.status === "Resolved" ? "bg-green-100 text-green-700" : c.status === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"}`}>
                         {c.status || "Pending"}
                       </span>
-
-                      {/* Assigned */}
-                      <span
-                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-32 text-center capitalize ${
-                          c.assigned_to
-                            ? "bg-indigo-100 text-indigo-700"
-                            : "bg-gray-200 text-gray-700"
-                        }`}
-                      >
-                        {c.assigned_to?.name
-                          ? `${c.assigned_to.name} (${c.assigned_to.type})`
-                          : "Unassigned"}
+                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-32 text-center capitalize ${c.assigned_to ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-700"}`}>
+                        {c.assigned_to ? `${c.assigned_to.name} (${c.assigned_to.type})` : "Unassigned"}
                       </span>
                     </div>
 
-                    <h3 className="text-xl font-bold text-gray-900 mb-1">
-                      {c.title}
-                    </h3>
-                    <p className="text-sm text-rose-600 font-semibold mb-2">
-                      {c.complaintType}
-                    </p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-1">{c.title}</h3>
+                    <p className="text-sm text-rose-600 font-semibold mb-2">{c.complaintType}</p>
                     <hr className="border-gray-300 border-[1.2px] mb-3" />
                   </div>
 
@@ -266,7 +192,6 @@ const ManageComplaints = () => {
 
                   {/* Footer */}
                   <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50">
-                    {/* Upvote / downvote */}
                     <div className="flex items-center space-x-6">
                       <div className="flex items-center space-x-2">
                         <ArrowUp size={24} strokeWidth={3} className="text-blue-600" />
@@ -279,13 +204,13 @@ const ManageComplaints = () => {
                     </div>
 
                     {!c.assigned_to && (
-                      <button
-                        className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 shadow"
-                        onClick={() => setSelectedComplaint(c)}
-                      >
-                        Assign to authority
-                      </button>
-                    )}
+  <button
+    className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 shadow"
+    onClick={() => navigate(`/admin/assign-authority/${c._id}`)}
+  >
+    Assign to authority
+  </button>
+)}
                   </div>
                 </motion.div>
               ))}
@@ -296,60 +221,6 @@ const ManageComplaints = () => {
           )}
         </div>
       </div>
-
-      {/* Assign Modal */}
-      <AnimatePresence>
-        {selectedComplaint && (
-          <motion.div
-            className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm bg-black/50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div
-              className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 relative"
-              initial={{ y: 50 }}
-              animate={{ y: 0 }}
-              exit={{ y: 50 }}
-            >
-              <button
-                className="absolute top-4 right-4 text-gray-600 hover:text-red-500"
-                onClick={() => setSelectedComplaint(null)}
-              >
-                ✕
-              </button>
-              <h2 className="text-xl font-bold mb-4 text-rose-700">
-                Assign Authority
-              </h2>
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {authorities.length > 0 ? (
-                  authorities.map((auth) => (
-                    <div
-                      key={auth._id}
-                      className="flex justify-between items-center border rounded-lg px-4 py-2 hover:bg-rose-50"
-                    >
-                      <div>
-                        <p className="text-gray-800 font-medium">{auth.type}</p>
-                        <p className="text-gray-600">{auth.username}</p>
-                      </div>
-                      <button
-                        className="px-3 py-1 text-sm bg-rose-500 text-white rounded-lg hover:bg-rose-600"
-                        onClick={() =>
-                          handleAssignAuthority(selectedComplaint._id, auth._id)
-                        }
-                      >
-                        Select
-                      </button>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500">No authorities found.</p>
-                )}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <style>
         {`
