@@ -42,3 +42,30 @@
 .animate-slideIn {
   animation: slideIn 0.3s ease-out;
 }
+/* Dark Theme Overrides */
+
+:root {
+  /* Base Dark Theme */
+  --color-dark-900: #111827; /* gray-900 */
+  --color-dark-950: #030712; /* gray-950 */
+  --color-black: #000000;
+
+  /* Card Backgrounds */
+  --color-card-start: #1f2937; /* gray-800 */
+  --color-card-end: #111827;   /* gray-900 */
+  --color-card-border: #374151; /* gray-700 */
+
+  /* Accent (Rose / Premium Red) */
+  --color-rose-400: #fb7185; 
+  --color-rose-600: #e11d48;
+  --color-rose-700: #be123c;
+
+  /* Text Colors */
+  --color-text-light: #f9fafb; /* near white */
+  --color-text-muted: #9ca3af; /* gray-400 */
+  --color-text-secondary: #d1d5db; /* gray-300 */
+
+  /* Shadows (for pop effect) */
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 8px 30px rgba(251, 113, 133, 0.2); /* rose glow */
+}

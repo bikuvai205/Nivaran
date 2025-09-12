@@ -1,71 +1,102 @@
-import React, { useState } from 'react';
-import { FaUserCircle } from 'react-icons/fa';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  ListChecks,
+  Users,
+  ShieldPlus,
+  UserCheck,
+  Lock,
+  LogOut,
+  Rss
+} from 'lucide-react';
 
 const HomePage = () => {
   const navigate = useNavigate();
-  const [showDropdown, setShowDropdown] = useState(false);
 
   const handleLogout = () => {
-  localStorage.removeItem('isAdminLoggedIn');
-  localStorage.removeItem('adminId');
-  navigate('/', { replace: true }); // replace history entry to prevent back button
-};
-
+    localStorage.removeItem('isAdminLoggedIn');
+    localStorage.removeItem('adminId');
+    navigate('/', { replace: true });
+  };
 
   const cards = [
-    { title: '📊 Dashboard', desc: 'Visualize complaint trends & resolution stats', path: '/admin/dashboard' },
-    { title: '📨 Complaint Feed', desc: 'Monitor complaint activity like social media', path: '/admin/complaint-feed' },
-    { title: '🛠 Manage Complaints', desc: 'Review, verify, or close user complaints', path: '/admin/manage-complaints' },
-    { title: '👥 Manage Citizens', desc: 'View and terminate citizen accounts', path: '/admin/manage-citizens' },
-    { title: '🛡 Create Authorities', desc: 'Register accounts for government bodies', path: '/admin/create-authorities' },
-    { title: '📋 Manage Authorities', desc: 'Browse all approved authority profiles', path: '/admin/verified-authorities' },
-    { title: '🔒 Security Settings', desc: 'Change admin password', path: '/admin/security-settings' },
+    {
+      title: 'Dashboard',
+      desc: 'Interactive analytics and real-time complaint statistics.',
+      path: '/admin/dashboard',
+      icon: <LayoutDashboard className="w-10 h-10 text-rose-400 mb-4" />
+    },
+    {
+      title: 'Feed',
+      desc: 'Stay updated with live complaint activity.',
+      path: '/admin/complaint-feed',
+      icon: <Rss className="w-10 h-10 text-rose-400 mb-4" />
+    },
+    {
+      title: 'Assign Authority',
+      desc: 'Assign complaints to the right authorities.',
+      path: '/admin/manage-complaints',
+      icon: <ListChecks className="w-10 h-10 text-rose-400 mb-4" />
+    },
+    {
+      title: 'Manage Citizens',
+      desc: 'Oversee citizen accounts and maintain integrity.',
+      path: '/admin/manage-citizens',
+      icon: <Users className="w-10 h-10 text-rose-400 mb-4" />
+    },
+    {
+      title: 'Create Authorities',
+      desc: 'Register and empower government bodies.',
+      path: '/admin/create-authorities',
+      icon: <ShieldPlus className="w-10 h-10 text-rose-400 mb-4" />
+    },
+    {
+      title: 'Verified Authorities',
+      desc: 'Browse and manage approved authorities.',
+      path: '/admin/verified-authorities',
+      icon: <UserCheck className="w-10 h-10 text-rose-400 mb-4" />
+    },
+    {
+      title: 'Change Password',
+      desc: 'Keep your credentials secure.',
+      path: '/admin/security-settings',
+      icon: <Lock className="w-10 h-10 text-rose-400 mb-4" />
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-rose-50">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black">
       {/* Navigation */}
-      <div className="w-full bg-gradient-to-r from-rose-100 via-rose-50 to-rose-200 px-6 py-4 shadow-md flex justify-between items-center relative">
-        <h1 className="text-2xl font-bold text-rose-700 tracking-wide select-none">Nivaran</h1>
-        
-        <div className="flex items-center gap-3 text-rose-700 relative">
-          <span className="hidden sm:inline font-medium text-sm sm:text-base">Welcome, Admin</span>
-          
-          {/* User Icon Button */}
-          <button
-            className="hover:text-rose-800 transition text-3xl focus:outline-none"
-            title="Logout"
-            onClick={() => setShowDropdown(!showDropdown)}
-          >
-            <FaUserCircle />
-          </button>
+      <div className="w-full bg-gradient-to-r from-gray-800 via-gray-900 to-black px-6 py-4 shadow-md flex justify-between items-center">
+        <h1 className="text-2xl font-extrabold text-rose-400 tracking-wide select-none">Nivaran</h1>
 
-          {/* Dropdown Menu */}
-          {showDropdown && (
-            <div className="absolute right-0 top-12 bg-white border border-gray-200 shadow-lg rounded-md w-40 z-50">
-              <button
-                onClick={handleLogout}
-                className="w-full text-left px-4 py-2 hover:bg-rose-100 text-gray-700 text-sm"
-              >
-                🚪 Logout
-              </button>
-            </div>
-          )}
+        <div className="flex items-center gap-6">
+          <span className="hidden sm:inline font-medium text-sm sm:text-base text-gray-300">
+            Welcome, Admin
+          </span>
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-2 px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-lg shadow-md transition"
+          >
+            <LogOut className="w-4 h-4" />
+            
+          </button>
         </div>
       </div>
 
       {/* Cards Section */}
-      <div className="py-10 px-6 sm:px-12 lg:px-20">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <div className="py-12 px-6 sm:px-12 lg:px-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
           {cards.map((card, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl p-8 shadow-lg border border-rose-100 hover:shadow-xl hover:scale-[1.02] transition-all duration-300 cursor-pointer text-center"
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl p-8 shadow-xl border border-gray-700 hover:shadow-2xl hover:scale-[1.04] transition-all duration-300 cursor-pointer text-center"
               onClick={() => navigate(card.path)}
             >
-              <h3 className="text-lg font-semibold text-rose-600 mb-2">{card.title}</h3>
-              <p className="text-gray-600 text-sm">{card.desc}</p>
+              {card.icon}
+              <h3 className="text-xl font-bold text-white mb-3">{card.title}</h3>
+              <p className="text-gray-400 text-sm">{card.desc}</p>
             </div>
           ))}
         </div>
