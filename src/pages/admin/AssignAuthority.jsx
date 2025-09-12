@@ -3,15 +3,16 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const AssignAuthority = () => {
-  const { complaintId } = useParams();
+  const { complaintId } = useParams();   // check if we came with an ID
   const navigate = useNavigate();
 
   const [authorities, setAuthorities] = useState([]);
-  const [filter, setFilter] = useState("All"); // Department filter
-  const [statusFilter, setStatusFilter] = useState("Free"); // Status filter
+  const [filter, setFilter] = useState("All");
+  const [statusFilter, setStatusFilter] = useState("Free");
   const [search, setSearch] = useState("");
   const [departments, setDepartments] = useState([]);
   const [toastMessage, setToastMessage] = useState(null);
+  const [confirmAuthority, setConfirmAuthority] = useState(null);
 
   const token = localStorage.getItem("adminToken");
 
@@ -19,25 +20,20 @@ const AssignAuthority = () => {
     if (!token) return;
 
     try {
-      // Fetch all authorities
       const authRes = await axios.get("http://localhost:5000/api/authorities", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const authoritiesData = authRes.data || [];
 
-      // Fetch all complaints to determine busy authorities
       const complaintRes = await axios.get(
         "http://localhost:5000/api/complaints/admin",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const complaints = complaintRes.data || [];
 
-      // Map authorities with status
       const authoritiesWithStatus = authoritiesData.map((auth) => {
         const assigned = complaints.some(
-          (c) =>
-            c.assigned_to &&
-            c.assigned_to._id.toString() === auth._id.toString()
+          (c) => c.assigned_to && c.assigned_to._id.toString() === auth._id.toString()
         );
         return {
           ...auth,
@@ -46,12 +42,10 @@ const AssignAuthority = () => {
       });
 
       setAuthorities(authoritiesWithStatus);
-
-      // Set departments for filter dropdown
       const deptList = ["All", ...new Set(authoritiesWithStatus.map((a) => a.type))];
       setDepartments(deptList);
     } catch (err) {
-      console.error("Error fetching authorities or complaints:", err);
+      console.error("Error fetching authorities:", err);
     }
   };
 
@@ -60,6 +54,7 @@ const AssignAuthority = () => {
   }, [token]);
 
   const handleAssign = async (authorityId) => {
+    if (!complaintId) return; // block assignment when no complaint selected
     try {
       const res = await axios.post(
         "http://localhost:5000/api/complaints/assign",
@@ -70,8 +65,8 @@ const AssignAuthority = () => {
       setToastMessage(res.data.message || "Authority assigned successfully");
       setTimeout(() => setToastMessage(null), 2000);
 
-      // Refresh authorities after assignment
       fetchAuthorities();
+      setConfirmAuthority(null);
     } catch (err) {
       console.error("Failed to assign authority:", err);
       alert("Failed to assign authority");
@@ -101,23 +96,19 @@ const AssignAuthority = () => {
           ← Back
         </button>
 
-        <h1 className="text-3xl font-bold text-rose-700">Active Authorities</h1>
+        <h1 className="text-3xl font-bold text-rose-700">Authority Status</h1>
 
         <div className="flex gap-2 w-full sm:w-auto">
-          {/* Department filter */}
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
             className="px-4 py-2 border border-rose-200 rounded-xl shadow-sm focus:ring-2 focus:ring-rose-400 focus:outline-none bg-white text-rose-700"
           >
             {departments.map((dept, idx) => (
-              <option key={idx} value={dept}>
-                {dept}
-              </option>
+              <option key={idx} value={dept}>{dept}</option>
             ))}
           </select>
 
-          {/* Status filter */}
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
@@ -152,7 +143,7 @@ const AssignAuthority = () => {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-rose-700">Email</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-rose-700">Phone</th>
                 <th className="px-6 py-3 text-left text-sm font-semibold text-rose-700">Status</th>
-                <th className="px-6 py-3 text-left text-sm font-semibold text-rose-700">Actions</th>
+                {complaintId && <th className="px-6 py-3 text-left text-sm font-semibold text-rose-700">Actions</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-rose-200">
@@ -166,15 +157,21 @@ const AssignAuthority = () => {
                   <td className={`px-6 py-4 text-sm font-semibold ${auth.status === "Free" ? "text-green-600" : "text-red-600"}`}>
                     {auth.status}
                   </td>
-                  <td className="px-6 py-4 flex gap-2">
-                    <button
-                      onClick={() => handleAssign(auth._id)}
-                      disabled={auth.status === "Busy"}
-                      className={`px-3 py-1 rounded-xl shadow-sm transition ${auth.status === "Busy" ? "bg-gray-300 text-gray-600 cursor-not-allowed" : "bg-green-500 hover:bg-green-600 text-white"}`}     
-                    >
-                      Assign
-                    </button>
-                  </td>
+                  {complaintId && (
+                    <td className="px-6 py-4 flex gap-2">
+                      <button
+                        onClick={() => setConfirmAuthority(auth)}
+                        disabled={auth.status === "Busy"}
+                        className={`px-3 py-1 rounded-xl shadow-sm transition ${
+                          auth.status === "Busy"
+                            ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                            : "bg-green-500 hover:bg-green-600 text-white"
+                        }`}     
+                      >
+                        Assign
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -182,7 +179,33 @@ const AssignAuthority = () => {
         </div>
       )}
 
-      {/* Toast Notification */}
+      {/* Confirmation modal */}
+      {complaintId && confirmAuthority && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center">
+            <h2 className="text-xl font-bold mb-4 text-rose-700">Confirm Assignment</h2>
+            <p className="mb-6">
+              Are you sure you want to assign this complaint to <strong>{confirmAuthority.name}</strong>?
+            </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={() => handleAssign(confirmAuthority._id)}
+                className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-xl shadow"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={() => setConfirmAuthority(null)}
+                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 font-semibold rounded-xl shadow"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
       {toastMessage && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-xl shadow-lg z-50 animate-slide-up">
           {toastMessage}

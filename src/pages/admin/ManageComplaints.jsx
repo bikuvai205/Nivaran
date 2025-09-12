@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
-import { ArrowUp, ArrowDown, MapPin } from "lucide-react";
+import { ArrowLeft, ArrowUp, ArrowDown, MapPin } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 const ManageComplaints = () => {
@@ -80,8 +80,14 @@ const ManageComplaints = () => {
   return (
     <div className="p-6 bg-rose-200 bg-opacity-70 h-screen overflow-hidden">
       {/* Fixed Header */}
-      <div className="fixed top-0 left-0 w-full bg-rose-200 bg-opacity-70 z-10 py-4">
-        <h2 className="text-3xl font-bold text-rose-700 text-center">
+      <div className="fixed top-0 left-0 w-full bg-rose-200 bg-opacity-70 z-10 py-4 flex items-center px-6">
+        <button
+          onClick={() => navigate(-1)}
+          className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
+        >
+          <ArrowLeft size={24} className="text-rose-700" />
+        </button>
+        <h2 className="text-3xl font-bold text-rose-700 text-center flex-1">
           Assign Complaints
         </h2>
       </div>
@@ -112,14 +118,27 @@ const ManageComplaints = () => {
               <option value="anonymity">Anonymity</option>
             </select>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={showAssigned}
-              onChange={() => setShowAssigned(!showAssigned)}
-              className="w-5 h-5 rounded"
-            />
-            <span className="text-gray-700 font-medium">Show Assigned</span>
+
+          {/* Assigned toggle button */}
+          <div className="mt-3 space-y-3">
+            <button
+              onClick={() => setShowAssigned(!showAssigned)}
+              className={`w-full px-4 py-2 rounded-lg font-medium shadow ${
+                showAssigned
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "bg-green-100 text-green-800 hover:bg-green-200"
+              } transition`}
+            >
+              Show Assigned Complaints
+            </button>
+
+            {/* Go to Authority Status button */}
+            <button
+              onClick={() => navigate("/admin/assign-authority")}
+              className="w-full px-4 py-2 rounded-lg font-medium shadow bg-indigo-100 text-indigo-800 hover:bg-indigo-200 transition"
+            >
+              Go to Authority Status
+            </button>
           </div>
         </div>
 
@@ -164,10 +183,22 @@ const ManageComplaints = () => {
                     {/* Metadata badges */}
                     <div className="flex justify-center gap-3 mt-2 mb-3">
                       {getSeverityBadge(c.severity)}
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${c.status === "Resolved" ? "bg-green-100 text-green-700" : c.status === "In Progress" ? "bg-blue-100 text-blue-700" : "bg-yellow-100 text-yellow-700"}`}>
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${
+                          c.status === "Resolved"
+                            ? "bg-green-100 text-green-700"
+                            : c.status === "In Progress"
+                            ? "bg-blue-100 text-blue-700"
+                            : "bg-yellow-100 text-yellow-700"
+                        }`}
+                      >
                         {c.status || "Pending"}
                       </span>
-                      <span className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-32 text-center capitalize ${c.assigned_to ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-700"}`}>
+                      <span
+                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-32 text-center capitalize ${
+                          c.assigned_to ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
                         {c.assigned_to ? `${c.assigned_to.name} (${c.assigned_to.type})` : "Unassigned"}
                       </span>
                     </div>
@@ -204,13 +235,13 @@ const ManageComplaints = () => {
                     </div>
 
                     {!c.assigned_to && (
-  <button
-    className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 shadow"
-    onClick={() => navigate(`/admin/assign-authority/${c._id}`)}
-  >
-    Assign to authority
-  </button>
-)}
+                      <button
+                        className="px-4 py-2 text-sm rounded-lg bg-green-600 text-white hover:bg-green-700 shadow"
+                        onClick={() => navigate(`/admin/assign-authority/${c._id}`)}
+                      >
+                        Assign to authority
+                      </button>
+                    )}
                   </div>
                 </motion.div>
               ))}

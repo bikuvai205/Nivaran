@@ -39,6 +39,8 @@ function App() {
       <Route path="/authority/dashboard" element={<AuthorityDashboard />} />
       <Route path="/citizen/dashboard" element={<CitizenDashboard />} />
       <Route path="/admin/assign-authority/:complaintId" element={<AssignAuthority />} />
+      <Route path="/admin/assign-authority" element={<AssignAuthority />} />
+
 
       </Routes>
 
