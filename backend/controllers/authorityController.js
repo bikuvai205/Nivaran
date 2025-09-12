@@ -10,26 +10,14 @@ const registerAuthority = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Check duplicate email or username
+    // Check for duplicates
     const existingEmail = await Authority.findOne({ email });
-    if (existingEmail) {
-      return res.status(400).json({ message: "Email already registered" });
-    }
+    if (existingEmail) return res.status(400).json({ message: "Email already registered" });
 
     const existingUsername = await Authority.findOne({ username });
-    if (existingUsername) {
-      return res.status(400).json({ message: "Username already taken" });
-    }
+    if (existingUsername) return res.status(400).json({ message: "Username already taken" });
 
-    const newAuthority = new Authority({
-      name,
-      username,
-      email,
-      phone,
-      password, // plain → hashed by pre-save hook
-      type,
-    });
-
+    const newAuthority = new Authority({ name, username, email, phone, password, type });
     const savedAuthority = await newAuthority.save();
 
     res.status(201).json({
@@ -55,14 +43,10 @@ const loginAuthority = async (req, res) => {
     const { email, password } = req.body;
 
     const authority = await Authority.findOne({ email });
-    if (!authority) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!authority) return res.status(400).json({ message: "Invalid credentials" });
 
     const isMatch = await authority.matchPassword(password);
-    if (!isMatch) {
-      return res.status(400).json({ message: "Invalid credentials" });
-    }
+    if (!isMatch) return res.status(400).json({ message: "Invalid credentials" });
 
     const token = jwt.sign(
       { id: authority._id, type: authority.type },
@@ -96,7 +80,7 @@ const authorityDashboard = (req, res) => {
 // Get all verified authorities
 const getAllAuthorities = async (req, res) => {
   try {
-    const authorities = await Authority.find().select("-password"); // Exclude password
+    const authorities = await Authority.find().select("-password");
     res.status(200).json(authorities);
   } catch (error) {
     console.error("Fetch Error:", error.message);
@@ -104,7 +88,7 @@ const getAllAuthorities = async (req, res) => {
   }
 };
 
-//Delete by Authority Email
+// Delete authority by email
 const deleteAuthorityByEmail = async (req, res) => {
   const { email } = req.params;
   try {
@@ -119,13 +103,31 @@ const deleteAuthorityByEmail = async (req, res) => {
   }
 };
 
+// Get logged-in authority info
+const getAuthorityMe = async (req, res) => {
+  try {
+    if (!req.authority) return res.status(401).json({ message: "Not authorized" });
 
+    res.status(200).json({
+      id: req.authority._id,
+      name: req.authority.name,
+      username: req.authority.username,
+      email: req.authority.email,
+      phone: req.authority.phone,
+      type: req.authority.type,
+    });
+  } catch (error) {
+    console.error("Get Authority Me Error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
 
-// Export all functions (CommonJS)
+// Export all functions
 module.exports = {
   registerAuthority,
   loginAuthority,
   authorityDashboard,
   getAllAuthorities,
-  deleteAuthorityByEmail
+  deleteAuthorityByEmail,
+  getAuthorityMe,
 };

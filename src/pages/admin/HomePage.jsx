@@ -80,7 +80,7 @@ const HomePage = () => {
             className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-medium rounded-lg shadow-md transition"
           >
             <LogOut className="w-4 h-4" />
-            Logout
+           
           </button>
         </div>
       </div>

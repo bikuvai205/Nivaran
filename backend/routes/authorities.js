@@ -4,8 +4,11 @@ const {
   loginAuthority,
   authorityDashboard,
   getAllAuthorities,
-  deleteAuthorityByEmail
+  deleteAuthorityByEmail,
+  getAuthorityMe
 } = require("../controllers/authorityController");
+
+const protectAuthority = require("../middleware/authAuthority"); // <-- import middleware
 
 const router = express.Router();
 
@@ -16,12 +19,15 @@ router.post("/register", registerAuthority);
 router.post("/login", loginAuthority);
 
 // Dashboard (protected test route)
-router.get("/dashboard", authorityDashboard);
+router.get("/dashboard", protectAuthority, authorityDashboard); // <-- protected
 
 // Get all verified authorities
 router.get("/", getAllAuthorities);
 
 // Delete authority by email
 router.delete("/email/:email", deleteAuthorityByEmail);
+
+// Get logged-in authority info
+router.get("/me", protectAuthority, getAuthorityMe); // <-- protected
 
 module.exports = router;
