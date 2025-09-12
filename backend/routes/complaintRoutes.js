@@ -181,11 +181,21 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 router.get("/admin", adminAuthMiddleware, async (req, res) => {
   try {
     const complaints = await Complaint.find()
-      .populate("user", "fullName email")
-      .populate("assigned_to", "name type email phone") // populate authority if already assigned
+      .populate("user", "fullName username email") // ✅ populate fullName + username
+      .populate("assigned_to", "name type email phone") // ✅ populate authority
       .sort({ createdAt: -1 });
 
-    res.json(complaints);
+    // ✅ Ensure we explicitly return "Anonymous" if complaint.anonymous === true
+    const formatted = complaints.map((c) => {
+      return {
+        ...c.toObject(),
+        displayUser: c.anonymous
+          ? `${c.user?.username || "user123"} / Anonymous`
+          : c.user?.fullName || "Unknown User",
+      };
+    });
+
+    res.json(formatted);
   } catch (err) {
     console.error("Admin fetch error:", err);
     res.status(500).json({ message: "Server error" });
