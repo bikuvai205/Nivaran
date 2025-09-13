@@ -98,7 +98,7 @@ const MyComplaints = ({ citizen, token }) => {
 
       {/* Toggle buttons */}
       <div className="flex space-x-4 mb-6">
-        {["pending", "inprogress", "resolved"].map((phase) => (
+        {["pending", "assigned", "inprogress", "resolved"].map((phase) => (
           <button
             key={phase}
             onClick={() => setActivePhase(phase)}
@@ -154,11 +154,9 @@ const MyComplaints = ({ citizen, token }) => {
                 <div className="flex space-x-6">
                   <div className="flex items-center text-gray-400 cursor-not-allowed">
                     <ArrowUp size={18} className="mr-1" />
-                  <span c>
-                    {c.upvotes}</span>
+                    <span>{c.upvotes}</span>
                   </div>
                   <div className="flex items-center text-gray-400 cursor-not-allowed">
-                
                     <ArrowDown size={18} className="mr-1" />
                     <span>{c.downvotes}</span>
                   </div>
@@ -169,6 +167,8 @@ const MyComplaints = ({ citizen, token }) => {
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
                       c.status === "pending"
                         ? "bg-yellow-100 text-yellow-700"
+                        : c.status === "assigned"
+                        ? "bg-orange-100 text-orange-700"
                         : c.status === "inprogress"
                         ? "bg-blue-100 text-blue-700"
                         : "bg-green-100 text-green-700"
@@ -177,7 +177,7 @@ const MyComplaints = ({ citizen, token }) => {
                     {c.status.charAt(0).toUpperCase() + c.status.slice(1)}
                   </span>
 
-                  {/* Edit + Delete buttons for pending only */}
+                  {/* Edit + Delete buttons only for pending */}
                   {c.status === "pending" && (
                     <>
                       <button onClick={() => handleEditClick(c)} className="text-blue-600 hover:text-blue-800">

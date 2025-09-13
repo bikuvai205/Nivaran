@@ -24,7 +24,7 @@ assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: "Authority", default: 
 
     status: {
       type: String,
-      enum: ["pending", "inprogress", "resolved"],
+      enum: ["pending", "assigned","inprogress", "resolved"],
       default: "pending",
     },
   },

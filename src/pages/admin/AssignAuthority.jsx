@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
 
 const AssignAuthority = () => {
-  const { complaintId } = useParams();   // check if we came with an ID
+  const { complaintId } = useParams();
   const navigate = useNavigate();
 
   const [authorities, setAuthorities] = useState([]);
@@ -18,7 +18,6 @@ const AssignAuthority = () => {
 
   const fetchAuthorities = async () => {
     if (!token) return;
-
     try {
       const authRes = await axios.get("http://localhost:5000/api/authorities", {
         headers: { Authorization: `Bearer ${token}` },
@@ -32,13 +31,21 @@ const AssignAuthority = () => {
       const complaints = complaintRes.data || [];
 
       const authoritiesWithStatus = authoritiesData.map((auth) => {
-        const assigned = complaints.some(
-          (c) => c.assigned_to && c.assigned_to._id.toString() === auth._id.toString()
+        // Find a complaint assigned to this authority
+        const assignedComplaint = complaints.find(
+          (c) =>
+            c.assigned_to &&
+            c.assigned_to._id.toString() === auth._id.toString()
         );
-        return {
-          ...auth,
-          status: assigned ? "Busy" : "Free",
-        };
+
+        let status = "Free";
+        if (assignedComplaint) {
+          if (assignedComplaint.status === "assigned") status = "Assigned";
+          else if (assignedComplaint.status === "inprogress") status = "Busy";
+          else status = "Free";
+        }
+
+        return { ...auth, status };
       });
 
       setAuthorities(authoritiesWithStatus);
@@ -53,25 +60,29 @@ const AssignAuthority = () => {
     fetchAuthorities();
   }, [token]);
 
-  const handleAssign = async (authorityId) => {
-    if (!complaintId) return; // block assignment when no complaint selected
-    try {
-      const res = await axios.post(
-        "http://localhost:5000/api/complaints/assign",
-        { complaintId, authorityId },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+ const handleAssign = async (authorityId) => {
+  if (!complaintId) return;
+  try {
+    const res = await axios.post(
+      "http://localhost:5000/api/complaints/assign",
+      { complaintId, authorityId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
 
-      setToastMessage(res.data.message || "Authority assigned successfully");
-      setTimeout(() => setToastMessage(null), 2000);
+    // Show toast
+    setToastMessage(res.data.message || "Authority assigned successfully");
+    setTimeout(() => setToastMessage(null), 2000);
 
-      fetchAuthorities();
-      setConfirmAuthority(null);
-    } catch (err) {
-      console.error("Failed to assign authority:", err);
-      alert("Failed to assign authority");
-    }
-  };
+    // Redirect to ManageComplaints page after assignment
+    navigate("/admin/manage-complaints"); // <-- added this line
+
+    setConfirmAuthority(null);
+  } catch (err) {
+    console.error("Failed to assign authority:", err);
+    alert("Failed to assign authority");
+  }
+};
+
 
   const filteredAuthorities = (authorities || [])
     .filter((auth) => statusFilter === "All" || auth.status === statusFilter)
@@ -115,6 +126,7 @@ const AssignAuthority = () => {
             className="px-4 py-2 border border-rose-200 rounded-xl shadow-sm focus:ring-2 focus:ring-rose-400 focus:outline-none bg-white text-rose-700"
           >
             <option value="Free">Free</option>
+            <option value="Assigned">Assigned</option>
             <option value="Busy">Busy</option>
             <option value="All">All</option>
           </select>
@@ -154,16 +166,20 @@ const AssignAuthority = () => {
                   <td className="px-6 py-4 text-sm text-gray-800">{auth.username}</td>
                   <td className="px-6 py-4 text-sm text-gray-800">{auth.email}</td>
                   <td className="px-6 py-4 text-sm text-gray-800">{auth.phone}</td>
-                  <td className={`px-6 py-4 text-sm font-semibold ${auth.status === "Free" ? "text-green-600" : "text-red-600"}`}>
+                  <td className={`px-6 py-4 text-sm font-semibold ${
+                    auth.status === "Free" ? "text-green-600" :
+                    auth.status === "Assigned" ? "text-orange-600" :
+                    "text-red-600"
+                  }`}>
                     {auth.status}
                   </td>
                   {complaintId && (
                     <td className="px-6 py-4 flex gap-2">
                       <button
                         onClick={() => setConfirmAuthority(auth)}
-                        disabled={auth.status === "Busy"}
+                        disabled={auth.status !== "Free"} // only free can be assigned
                         className={`px-3 py-1 rounded-xl shadow-sm transition ${
-                          auth.status === "Busy"
+                          auth.status !== "Free"
                             ? "bg-gray-300 text-gray-600 cursor-not-allowed"
                             : "bg-green-500 hover:bg-green-600 text-white"
                         }`}     

@@ -23,7 +23,7 @@ const CATEGORY_MAP = {
   Water: "Drinking Water",
   Electricity: "Electricity",
   "Street Animal": "Street Animal",
-  Environment: "Environment",
+  Environmental: "Environment",
   Others: "Others",
 };
 
