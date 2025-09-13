@@ -1,6 +1,8 @@
+// src/pages/authority/AuthorityDashboard.jsx
 import React, { useState, useEffect } from "react";
-import { MapPin, LogOut, X } from "lucide-react";
+import { MapPin, LogOut, X, Inbox, ClipboardCheck, FileClock } from "lucide-react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const AuthorityDashboard = () => {
   const [activeTab, setActiveTab] = useState("incoming");
@@ -11,6 +13,14 @@ const AuthorityDashboard = () => {
   const [viewingLog, setViewingLog] = useState(null);
 
   const token = localStorage.getItem("authorityToken");
+  const navigate = useNavigate();
+
+  // ✅ Force redirect if no token (extra safety, aside from private route)
+  useEffect(() => {
+    if (!token) {
+      navigate("/authority/login", { replace: true });
+    }
+  }, [token, navigate]);
 
   // Fetch authority info
   useEffect(() => {
@@ -53,7 +63,7 @@ const AuthorityDashboard = () => {
 
   const handleLogout = () => {
     localStorage.removeItem("authorityToken");
-    window.location.reload();
+    navigate("/", { replace: true });
   };
 
   const handleAccept = async (complaintId) => {
@@ -108,7 +118,7 @@ const AuthorityDashboard = () => {
   const renderTaskCard = (task, type) => (
     <div
       key={task._id}
-      className="bg-white shadow-md rounded-xl border border-gray-200 overflow-hidden"
+      className="bg-white shadow-lg rounded-2xl border border-gray-200 overflow-hidden transition hover:shadow-xl"
     >
       <div className="px-6 pt-4">
         <div className="flex justify-between items-center mb-2 text-gray-500 text-sm">
@@ -172,103 +182,90 @@ const AuthorityDashboard = () => {
         <h2 className="text-2xl font-extrabold text-rose-700">Authority ({authority.name})</h2>
         <button
           onClick={handleLogout}
-          className="flex items-center gap-2 px-4 py-2 bg-rose-500 hover:bg-rose-600 text-white font-medium rounded-lg shadow-md transition"
+          className="p-2 bg-rose-500 hover:bg-rose-600 text-white rounded-full shadow-md transition"
+          title="Logout"
         >
-          <LogOut className="w-4 h-4" /> Logout
+          <LogOut className="w-5 h-5" />
         </button>
       </div>
 
       <div className="flex mt-20 h-full">
         {/* Sidebar */}
         <div className="w-64 bg-white rounded-2xl p-5 shadow-lg border border-rose-100 h-[calc(100vh-5rem)] space-y-4 fixed">
-          {["incoming", "update", "logs"].map((tab) => (
+          {[
+            { key: "incoming", label: "Incoming Tasks", icon: <Inbox size={18} /> },
+            { key: "update", label: "Update Accepted", icon: <ClipboardCheck size={18} /> },
+            { key: "logs", label: "Logs", icon: <FileClock size={18} /> },
+          ].map((tab) => (
             <button
-              key={tab}
-              className={`w-full text-left px-4 py-3 rounded-lg font-medium transition ${
-                activeTab === tab
+              key={tab.key}
+              className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-lg font-medium transition ${
+                activeTab === tab.key
                   ? "bg-rose-100 text-rose-700 shadow-inner"
                   : "bg-white text-gray-700 hover:bg-rose-50"
               }`}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => setActiveTab(tab.key)}
             >
-              {tab === "incoming"
-                ? "Incoming Tasks"
-                : tab === "update"
-                ? "Update Accepted Tasks"
-                : "Logs"}
+              {tab.icon}
+              {tab.label}
             </button>
           ))}
         </div>
 
         {/* Main Content */}
         <div className="ml-72 p-6 w-full overflow-y-auto max-h-[calc(100vh-5rem)] space-y-6">
-          {/* Incoming */}
           {activeTab === "incoming" && (
-            <>
-              {incomingTasks.length > 0 ? (
-                <div className="space-y-6">
-                  {incomingTasks.map(task => renderTaskCard(task, "incoming"))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-500">No tasks available.</p>
-              )}
-            </>
+            incomingTasks.length > 0 ? (
+              <div className="space-y-6">
+                {incomingTasks.map(task => renderTaskCard(task, "incoming"))}
+              </div>
+            ) : <p className="text-center text-gray-500">No tasks available.</p>
           )}
 
-          {/* Update Accepted Tasks */}
           {activeTab === "update" && (
-            <>
-              {acceptedTasks.length > 0 ? (
-                <div className="space-y-6">
-                  {acceptedTasks.map(task => renderTaskCard(task, "update"))}
-                </div>
-              ) : (
-                <p className="text-center text-gray-500">No accepted tasks.</p>
-              )}
-            </>
+            acceptedTasks.length > 0 ? (
+              <div className="space-y-6">
+                {acceptedTasks.map(task => renderTaskCard(task, "update"))}
+              </div>
+            ) : <p className="text-center text-gray-500">No accepted tasks.</p>
           )}
 
-          {/* Logs Tab */}
           {activeTab === "logs" && (
-            <>
-              {logs.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white rounded-xl shadow-md border border-gray-200">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="px-4 py-2 text-left text-gray-700">Complaint ID</th>
-                        <th className="px-4 py-2 text-left text-gray-700">Title</th>
-                        <th className="px-4 py-2 text-left text-gray-700">Location</th>
-                        <th className="px-4 py-2 text-left text-gray-700">Assigned On</th>
-                        <th className="px-4 py-2 text-left text-gray-700">Solved On</th>
-                        <th className="px-4 py-2 text-left text-gray-700">Action</th>
+            logs.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white rounded-xl shadow-md border border-gray-200">
+                  <thead>
+                    <tr className="bg-gray-100">
+                      <th className="px-4 py-2 text-left text-gray-700">Complaint ID</th>
+                      <th className="px-4 py-2 text-left text-gray-700">Title</th>
+                      <th className="px-4 py-2 text-left text-gray-700">Location</th>
+                      <th className="px-4 py-2 text-left text-gray-700">Assigned On</th>
+                      <th className="px-4 py-2 text-left text-gray-700">Solved On</th>
+                      <th className="px-4 py-2 text-left text-gray-700">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {logs.map(log => (
+                      <tr key={log._id} className="border-t border-gray-200">
+                        <td className="px-4 py-2">{log._id}</td>
+                        <td className="px-4 py-2">{log.title}</td>
+                        <td className="px-4 py-2">{log.location}</td>
+                        <td className="px-4 py-2">{log.assignedAt ? new Date(log.assignedAt).toLocaleString() : "-"}</td>
+                        <td className="px-4 py-2">{log.solvedAt ? new Date(log.solvedAt).toLocaleString() : "-"}</td>
+                        <td className="px-4 py-2">
+                          <button
+                            className="px-3 py-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
+                            onClick={() => setViewingLog(log)}
+                          >
+                            View Details
+                          </button>
+                        </td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {logs.map(log => (
-                        <tr key={log._id} className="border-t border-gray-200">
-                          <td className="px-4 py-2">{log._id}</td>
-                          <td className="px-4 py-2">{log.title}</td>
-                          <td className="px-4 py-2">{log.location}</td>
-                          <td className="px-4 py-2">{log.assignedAt ? new Date(log.assignedAt).toLocaleString() : "-"}</td>
-                          <td className="px-4 py-2">{log.solvedAt ? new Date(log.solvedAt).toLocaleString() : "-"}</td>
-                          <td className="px-4 py-2">
-                            <button
-                              className="px-3 py-1 bg-rose-600 text-white rounded-lg hover:bg-rose-700"
-                              onClick={() => setViewingLog(log)}
-                            >
-                              View Details
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-center text-gray-500">No resolved tasks.</p>
-              )}
-            </>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : <p className="text-center text-gray-500">No resolved tasks.</p>
           )}
 
           {/* View Details Modal */}
