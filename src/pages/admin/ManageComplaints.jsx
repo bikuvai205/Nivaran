@@ -22,6 +22,7 @@ const ManageComplaints = () => {
         const res = await axios.get("http://localhost:5000/api/complaints/admin", {
           headers: { Authorization: `Bearer ${token}` },
         });
+        console.log("Fetched complaints:", res.data);
         setComplaints(res.data);
       } catch (err) {
         console.error(err);
@@ -209,7 +210,7 @@ const ManageComplaints = () => {
                   </div>
 
                   <div className="px-6 pb-4">
-                    <p className="text-gray-700 mb-3">{c.description}</p>
+                    <p className="text-gray-700 mb-3">Description: {c.description}</p>
                     {c.image && (
                       <div className="flex justify-center bg-gray-50 rounded-xl overflow-hidden">
                         <img

@@ -22,7 +22,8 @@ const upload = multer({ storage });
 // -------------------- CREATE COMPLAINT --------------------
 router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
-    const { title, description, severity, anonymous, location, complaintType } = req.body;
+    const { title, description, severity, anonymous, location, complaintType } =
+      req.body;
     const image = req.file ? req.file.filename : null;
 
     const complaint = new Complaint({
@@ -40,7 +41,9 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     });
 
     await complaint.save();
-    res.status(201).json({ message: "Complaint submitted successfully", complaint });
+    res
+      .status(201)
+      .json({ message: "Complaint submitted successfully", complaint });
   } catch (error) {
     console.error("Error creating complaint:", error);
     res.status(500).json({ message: "Failed to submit complaint" });
@@ -74,7 +77,8 @@ router.put("/:id/vote", authMiddleware, async (req, res) => {
   try {
     const { voteType } = req.body; // 1 = upvote, -1 = downvote, 0 = remove
     const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
+    if (!complaint)
+      return res.status(404).json({ message: "Complaint not found" });
 
     const existingVoteIndex = complaint.votes.findIndex(
       (v) => v.user.toString() === req.user._id.toString()
@@ -95,7 +99,8 @@ router.put("/:id/vote", authMiddleware, async (req, res) => {
     } else {
       if (voteType === 1) complaint.upvotes++;
       if (voteType === -1) complaint.downvotes++;
-      if (voteType !== 0) complaint.votes.push({ user: req.user._id, voteType });
+      if (voteType !== 0)
+        complaint.votes.push({ user: req.user._id, voteType });
     }
 
     await complaint.save();
@@ -111,13 +116,18 @@ router.put("/:id", authMiddleware, async (req, res) => {
   try {
     const { title, description, location } = req.body;
     const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
+    if (!complaint)
+      return res.status(404).json({ message: "Complaint not found" });
 
     if (complaint.user.toString() !== req.user._id.toString())
-      return res.status(403).json({ message: "Not authorized to edit this complaint" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to edit this complaint" });
 
     if (complaint.status !== "pending")
-      return res.status(400).json({ message: "Only pending complaints can be edited" });
+      return res
+        .status(400)
+        .json({ message: "Only pending complaints can be edited" });
 
     if (title?.trim()) complaint.title = title.trim();
     if (description?.trim()) complaint.description = description.trim();
@@ -147,13 +157,18 @@ router.get("/mine", authMiddleware, async (req, res) => {
 router.delete("/:id", authMiddleware, async (req, res) => {
   try {
     const complaint = await Complaint.findById(req.params.id);
-    if (!complaint) return res.status(404).json({ message: "Complaint not found" });
+    if (!complaint)
+      return res.status(404).json({ message: "Complaint not found" });
 
     if (complaint.user.toString() !== req.user._id.toString())
-      return res.status(403).json({ message: "Not authorized to delete this complaint" });
+      return res
+        .status(403)
+        .json({ message: "Not authorized to delete this complaint" });
 
     if (complaint.status !== "pending")
-      return res.status(400).json({ message: "Only pending complaints can be deleted" });
+      return res
+        .status(400)
+        .json({ message: "Only pending complaints can be deleted" });
 
     await complaint.deleteOne();
     res.json({ message: "Complaint deleted successfully" });
@@ -175,8 +190,11 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
       displayUser: c.anonymous
         ? `${c.user?.username || "user123"} / Anonymous`
         : c.user?.fullName || "Unknown User",
+      assignedTo: c.assigned_to
+        ? { name: c.assigned_to.name, type: c.assigned_to.type }
+        : null,
     }));
-
+    console.log(formatted);
     res.json(formatted);
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -237,12 +255,16 @@ router.post("/assign", adminAuthMiddleware, async (req, res) => {
   try {
     const { complaintId, authorityId } = req.body;
     if (!complaintId || !authorityId)
-      return res.status(400).json({ message: "Complaint ID and Authority ID are required" });
+      return res
+        .status(400)
+        .json({ message: "Complaint ID and Authority ID are required" });
 
     const complaint = await Complaint.findById(complaintId);
     const authority = await Authority.findById(authorityId);
     if (!complaint || !authority)
-      return res.status(404).json({ message: "Complaint or Authority not found" });
+      return res
+        .status(404)
+        .json({ message: "Complaint or Authority not found" });
 
     complaint.assigned_to = authorityId;
     complaint.status = "assigned";
@@ -266,13 +288,22 @@ router.post("/:id/accept", protectAuthority, async (req, res) => {
     const complaint = await Complaint.findById(complaintId);
     const authority = await Authority.findById(authorityId);
     if (!complaint || !authority)
-      return res.status(404).json({ message: "Complaint or Authority not found" });
+      return res
+        .status(404)
+        .json({ message: "Complaint or Authority not found" });
 
-    if (!complaint.assigned_to || complaint.assigned_to.toString() !== authorityId.toString())
-      return res.status(403).json({ message: "You are not assigned to this complaint" });
+    if (
+      !complaint.assigned_to ||
+      complaint.assigned_to.toString() !== authorityId.toString()
+    )
+      return res
+        .status(403)
+        .json({ message: "You are not assigned to this complaint" });
 
     if (complaint.status !== "assigned")
-      return res.status(400).json({ message: "Complaint cannot be accepted now" });
+      return res
+        .status(400)
+        .json({ message: "Complaint cannot be accepted now" });
 
     complaint.status = "inprogress";
     await complaint.save();
@@ -280,7 +311,10 @@ router.post("/:id/accept", protectAuthority, async (req, res) => {
     authority.status = "busy";
     await authority.save();
 
-    res.json({ message: "Complaint accepted. Status updated to inprogress.", complaint });
+    res.json({
+      message: "Complaint accepted. Status updated to inprogress.",
+      complaint,
+    });
   } catch (err) {
     res.status(500).json({ message: "Failed to accept complaint" });
   }
@@ -295,13 +329,22 @@ router.post("/:id/reject", protectAuthority, async (req, res) => {
     const complaint = await Complaint.findById(complaintId);
     const authority = await Authority.findById(authorityId);
     if (!complaint || !authority)
-      return res.status(404).json({ message: "Complaint or Authority not found" });
+      return res
+        .status(404)
+        .json({ message: "Complaint or Authority not found" });
 
-    if (!complaint.assigned_to || complaint.assigned_to.toString() !== authorityId.toString())
-      return res.status(403).json({ message: "You are not assigned to this complaint" });
+    if (
+      !complaint.assigned_to ||
+      complaint.assigned_to.toString() !== authorityId.toString()
+    )
+      return res
+        .status(403)
+        .json({ message: "You are not assigned to this complaint" });
 
     if (complaint.status !== "assigned")
-      return res.status(400).json({ message: "Complaint cannot be rejected now" });
+      return res
+        .status(400)
+        .json({ message: "Complaint cannot be rejected now" });
 
     complaint.assigned_to = null;
     complaint.status = "pending";
@@ -310,7 +353,10 @@ router.post("/:id/reject", protectAuthority, async (req, res) => {
     authority.status = "free";
     await authority.save();
 
-    res.json({ message: "Complaint rejected. Authority is now free.", complaint });
+    res.json({
+      message: "Complaint rejected. Authority is now free.",
+      complaint,
+    });
   } catch (err) {
     res.status(500).json({ message: "Failed to reject complaint" });
   }
@@ -346,13 +392,22 @@ router.post("/:id/resolve", protectAuthority, async (req, res) => {
     const authority = await Authority.findById(authorityId);
 
     if (!complaint || !authority)
-      return res.status(404).json({ message: "Complaint or Authority not found" });
+      return res
+        .status(404)
+        .json({ message: "Complaint or Authority not found" });
 
-    if (!complaint.assigned_to || complaint.assigned_to.toString() !== authorityId.toString())
-      return res.status(403).json({ message: "You are not assigned to this complaint" });
+    if (
+      !complaint.assigned_to ||
+      complaint.assigned_to.toString() !== authorityId.toString()
+    )
+      return res
+        .status(403)
+        .json({ message: "You are not assigned to this complaint" });
 
     if (complaint.status !== "inprogress")
-      return res.status(400).json({ message: "Only in-progress complaints can be resolved" });
+      return res
+        .status(400)
+        .json({ message: "Only in-progress complaints can be resolved" });
 
     complaint.status = "resolved";
     complaint.solvedAt = new Date();

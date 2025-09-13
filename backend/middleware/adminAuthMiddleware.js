@@ -13,7 +13,7 @@ export const adminAuthMiddleware = async (req, res, next) => {
     const admin = await Admin.findById(decoded.id);
     if (!admin) return res.status(401).json({ message: "Admin not found" });
 
-    req.user = admin;
+    req.admin = admin;
     next();
   } catch (err) {
     console.error("Admin Auth Middleware Error:", err);
