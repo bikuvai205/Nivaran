@@ -184,7 +184,7 @@ const LoginPage = () => {
               transition={{ duration: 0.8 }}
               className="mt-4 text-base sm:text-lg lg:text-xl text-white/90 font-medium"
             >
-              Add Your Voice, Our Action
+               "Your Voice, Our Action"
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 20 }}

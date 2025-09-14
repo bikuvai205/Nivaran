@@ -1,9 +1,9 @@
-// src/pages/citizen/RegisterComplaint.jsx
 import React, { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import * as tf from '@tensorflow/tfjs';
 import * as nsfwjs from 'nsfwjs';
 import { UploadCloud, X, Shield } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const MAX_TITLE = 120;
 const MAX_DESC = 2000;
@@ -150,63 +150,69 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   };
 
   return (
-    <div className="p-6 relative">
+    <div className="min-h-screen w-full p-4 sm:p-6 md:p-8 lg:p-10 bg-gradient-to-br from-rose-50/50 via-white to-pink-50/50">
       {/* Toast */}
       {toast && (
-        <div className={`fixed top-5 right-5 px-4 py-2 rounded-xl text-white font-semibold shadow-lg
-          ${toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'}`}
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          className={`fixed top-6 right-6 px-5 py-3 rounded-xl text-white font-semibold text-base shadow-xl backdrop-blur-md border border-rose-300/50 z-50
+            ${toast.type === 'success' ? 'bg-rose-600/95' : 'bg-red-600/95'}`}
         >
           {toast.message}
-        </div>
+        </motion.div>
       )}
 
-      <h2 className="text-2xl font-bold text-rose-600 mb-4">Register a Complaint</h2>
-      <div className="bg-white shadow-xl rounded-2xl p-6 space-y-5 border border-rose-100">
+      <h2 className="text-3xl sm:text-4xl font-extrabold text-rose-600 mb-8 border-b-2 border-rose-300/50 pb-3 backdrop-blur-sm">
+        Register a Complaint
+      </h2>
+      <div className="bg-rose-100/30 backdrop-blur-md shadow-xl rounded-2xl p-6 sm:p-8 md:p-10 border border-rose-300/50 space-y-8">
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+          <label className="block text-lg font-medium text-rose-800 mb-2">Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => e.target.value.length <= MAX_TITLE && setTitle(e.target.value)}
             placeholder="Short, clear title"
-            className="w-full border rounded-xl px-4 py-2 focus:ring-rose-300"
+            className="w-full border border-rose-300/50 rounded-xl px-4 py-3 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-400 text-gray-800 text-base shadow-sm"
           />
-          <span className="text-xs text-gray-500">{titleCount}</span>
+          <span className="text-sm text-gray-600 mt-2 block">{titleCount}</span>
         </div>
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-lg font-medium text-rose-800 mb-2">Description</label>
           <textarea
             value={desc}
             onChange={(e) => e.target.value.length <= MAX_DESC && setDesc(e.target.value)}
             placeholder="Describe the problem"
-            rows={5}
-            className="w-full border rounded-xl px-4 py-3 focus:ring-rose-300 resize-y"
+            rows={6}
+            className="w-full border border-rose-300/50 rounded-xl px-4 py-3 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-400 text-gray-800 text-base shadow-sm resize-y"
           />
-          <span className="text-xs text-gray-500">{descCount}</span>
+          <span className="text-sm text-gray-600 mt-2 block">{descCount}</span>
         </div>
 
         {/* Location */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+          <label className="block text-lg font-medium text-rose-800 mb-2">Location</label>
           <input
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="Enter location"
-            className="w-full border rounded-xl px-4 py-2 focus:ring-rose-300"
+            className="w-full border border-rose-300/50 rounded-xl px-4 py-3 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-400 text-gray-800 text-base shadow-sm"
           />
         </div>
 
         {/* Complaint Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Complaint Type</label>
+          <label className="block text-lg font-medium text-rose-800 mb-2">Complaint Type</label>
           <select
             value={complaintType}
             onChange={(e) => setComplaintType(e.target.value)}
-            className="w-full border rounded-xl px-4 py-2 focus:ring-rose-300"
+            className="w-full border border-rose-300/50 rounded-xl px-4 py-3 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-400 text-gray-800 text-base shadow-sm"
           >
             <option value="">Select type</option>
             {COMPLAINT_TYPES.map((t) => (
@@ -217,76 +223,81 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
 
         {/* Severity */}
         <div>
-          <label className="mb-2 block text-sm font-medium text-gray-700">Severity</label>
-          <div className="grid grid-cols-3 gap-3">
+          <label className="block text-lg font-medium text-rose-800 mb-3">Severity</label>
+          <div className="grid grid-cols-3 gap-3 sm:gap-4">
             {['low', 'medium', 'high'].map((level) => (
               <button
                 key={level}
                 type="button"
                 onClick={() => setSeverity(level)}
-                className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
+                className={`rounded-xl border px-4 py-2 text-base font-semibold transition-all duration-200 hover:shadow-md ${
                   severity === level
-                    ? 'border-rose-500 bg-rose-50 text-rose-700'
-                    : 'border-gray-300 text-gray-700 hover:border-rose-300'
+                    ? 'border-rose-500 bg-rose-100/50 text-rose-700'
+                    : 'border-rose-300/50 text-rose-700 hover:bg-rose-100/50'
                 }`}
               >
-                {level}
+                {level.charAt(0).toUpperCase() + level.slice(1)}
               </button>
             ))}
           </div>
         </div>
 
         {/* Anonymous */}
-        <div className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={anonymous}
-            onChange={(e) => setAnonymous(e.target.checked)}
-            className="h-4 w-4 rounded border-gray-300 text-rose-600 focus:ring-rose-400"
-          />
-          <span className="text-sm text-gray-800 flex items-center">
-            Post as Anonymous
-            <Shield size={16} className="ml-2 text-rose-500" />
-          </span>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-3">
+            <input
+              type="checkbox"
+              checked={anonymous}
+              onChange={(e) => setAnonymous(e.target.checked)}
+              className="h-5 w-5 rounded border-rose-300/50 text-rose-600 focus:ring-rose-400 bg-rose-50/50"
+            />
+            <span className="text-base text-rose-700 flex items-center">
+              Post as Anonymous
+              <Shield size={18} className="ml-2 text-rose-500" />
+            </span>
+          </div>
+          <p className="text-base text-rose-600/80 italic">
+            Your information will remain private and visible only to administrators for review.
+          </p>
         </div>
 
         {/* Images */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">Images (optional)</label>
+          <label className="block text-lg font-medium text-rose-800 mb-3">Images (optional)</label>
           <div
             onDrop={onDrop}
             onDragOver={onDragOver}
-            className="border-2 border-dashed rounded-2xl p-6 text-center bg-rose-50/40"
+            className="border-2 border-dashed border-rose-300/50 rounded-2xl p-6 sm:p-8 text-center bg-rose-50/30 backdrop-blur-sm transition-all duration-200 hover:bg-rose-100/50"
           >
-            <UploadCloud className="mx-auto mb-2" />
-            <p className="text-sm text-gray-700">
+            <UploadCloud className="mx-auto mb-3 text-rose-500" size={28} />
+            <p className="text-base text-rose-700">
               Drag & drop images here, or
-              <label className="text-rose-700 font-semibold cursor-pointer ml-1">
+              <label className="text-rose-600 font-semibold cursor-pointer ml-1 hover:underline">
                 browse
                 <input type="file" accept={ACCEPTED_IMG_TYPES.join(',')} multiple className="hidden" onChange={onFileInputChange} />
               </label>
             </p>
-            <p className="text-xs text-gray-500 mt-1">Up to {MAX_IMAGES} images</p>
+            <p className="text-sm text-gray-600 mt-2">Up to {MAX_IMAGES} images (png, jpg, jpeg, webp, gif)</p>
           </div>
 
           {images.length > 0 && (
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+            <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
               {images.map((img, idx) => (
-                <div key={idx} className="relative rounded-xl overflow-hidden border bg-white">
+                <div key={idx} className="relative rounded-xl overflow-hidden border border-rose-300/50 bg-rose-50/30 shadow-sm">
                   {img.preview ? (
-                    <img src={img.preview} alt={`upload-${idx}`} className="w-full h-32 object-cover" />
+                    <img src={img.preview} alt={`upload-${idx}`} className="w-full h-20 sm:h-32 object-cover" />
                   ) : (
-                    <div className="w-full h-32 flex items-center justify-center bg-gray-100 text-gray-400 text-sm">No preview</div>
+                    <div className="w-full h-20 sm:h-32 flex items-center justify-center bg-rose-50/50 text-gray-600 text-sm">No preview</div>
                   )}
                   {img.verifying && (
-                    <span className="absolute top-2 left-2 bg-yellow-400 text-black text-xs px-2 py-1 rounded-full">Verifying...</span>
+                    <span className="absolute top-2 left-2 bg-yellow-400/90 text-black text-xs sm:text-sm px-2 py-1 rounded-full">Verifying...</span>
                   )}
                   <button
                     type="button"
                     onClick={() => removeImageAt(idx)}
-                    className="absolute top-2 right-2 bg-white/90 hover:bg-white rounded-full p-1 shadow"
+                    className="absolute top-2 right-2 bg-rose-100/90 hover:bg-rose-200/90 rounded-full p-1.5 shadow-md transition-all duration-200"
                   >
-                    <X size={16} />
+                    <X size={18} className="text-rose-600" />
                   </button>
                 </div>
               ))}
@@ -295,18 +306,24 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
         </div>
 
         {/* Error */}
-        {composerError && <p className="text-sm text-red-600">{composerError}</p>}
+        {composerError && (
+          <p className="text-base text-red-600 bg-red-50/50 rounded-lg px-4 py-2 border border-red-300/50">{composerError}</p>
+        )}
 
         {/* Actions */}
-        <div className="flex justify-between pt-2">
-          <button type="button" onClick={clearComposer} className="px-4 py-2 rounded-xl border text-gray-700 hover:bg-gray-50">
+        <div className="flex justify-between pt-4">
+          <button
+            type="button"
+            onClick={clearComposer}
+            className="px-5 sm:px-6 py-2.5 rounded-xl border border-rose-300/50 text-rose-700 bg-rose-50/50 hover:bg-rose-100/50 font-semibold text-base transition-all duration-200 hover:shadow-md"
+          >
             Clear
           </button>
           <button
             type="button"
             disabled={!canSubmit}
             onClick={handleSubmitComplaint}
-            className={`px-5 py-2 rounded-xl font-semibold text-white ${
+            className={`px-5 sm:px-6 py-2.5 rounded-xl font-semibold text-white text-base transition-all duration-200 hover:shadow-md ${
               canSubmit ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-300 cursor-not-allowed'
             }`}
           >

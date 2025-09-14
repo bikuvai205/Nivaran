@@ -5,6 +5,8 @@ const multer = require("multer");
 const path = require("path");
 const Complaint = require("../models/Complaint");
 const Authority = require("../models/authorities/Authority"); // ✅ authority model
+const Citizen = require("../models/Citizen"); // ✅ citizen model
+
 const authMiddleware = require("../middleware/authMiddleware"); // citizen middleware
 const { adminAuthMiddleware } = require("../middleware/adminAuthMiddleware"); // admin middleware
 const protectAuthority = require("../middleware/authAuthority"); // authority middleware
@@ -177,7 +179,7 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-// -------------------- ADMIN: VIEW ALL COMPLAINTS --------------------
+
 // -------------------- ADMIN: VIEW ALL COMPLAINTS --------------------
 router.get("/admin", adminAuthMiddleware, async (req, res) => {
   try {
@@ -257,6 +259,84 @@ router.get("/stats/complaints-per-hour", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// -------------------- SUMMARY COUNT --------------------
+router.get("/summary", async (req, res) => {
+  try {
+    const totalAuthorities = await Authority.countDocuments();
+    const totalCitizens = await Citizen.countDocuments();
+    const totalTasks = await Complaint.countDocuments();
+
+    // Count complaints per status
+    const statusAggregation = await Complaint.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+    ]);
+
+    const statusCounts = statusAggregation.reduce((acc, curr) => {
+      acc[curr._id] = curr.count;
+      return acc;
+    }, { pending: 0, assigned: 0, inprogress: 0, resolved: 0 });
+
+    res.json({ totalAuthorities, totalCitizens, totalTasks, statusCounts });
+  } catch (err) {
+    console.error("Error fetching summary:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+// -------------------- STATUS COUNT ONLY --------------------
+router.get("/status-count", async (req, res) => {
+  try {
+    const complaints = await Complaint.aggregate([
+      { $group: { _id: "$status", count: { $sum: 1 } } },
+      { $project: { _id: 0, name: "$_id", value: "$count" } },
+    ]);
+    res.json(complaints);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+router.get("/summary", async (req, res) => {
+  try {
+    const totalAuthorities = await Authority.countDocuments();
+    const totalCitizens = await Citizen.countDocuments();
+    const totalTasks = await Complaint.countDocuments();
+
+    // Count complaints per status
+    const statusAggregation = await Complaint.aggregate([
+      {
+        $group: {
+          _id: "$status",
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Convert array to object
+    const statusCounts = statusAggregation.reduce((acc, curr) => {
+      acc[curr._id] = curr.count;
+      return acc;
+    }, {
+      pending: 0,
+      assigned: 0,
+      inprogress: 0,
+      resolved: 0,
+    });
+
+    res.json({
+      totalAuthorities,
+      totalCitizens,
+      totalTasks,
+      statusCounts,
+    });
+  } catch (err) {
+    console.error("Error fetching summary:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
 
 // -------------------- ADMIN: ASSIGN AUTHORITY --------------------
 router.post("/assign", adminAuthMiddleware, async (req, res) => {
