@@ -28,7 +28,7 @@ const AdminComplaintFeed = () => {
           severity: c.severity,
           status: c.status,
           assignedTo: c.assignedTo
-            ? `${c.assignedTo.name} (${c.assignedTo.type})`
+            ? `${c.assignedTo.username} (${c.assignedTo.type})`
             : "Not Assigned",
           upvotes: c.upvotes,
           downvotes: c.downvotes,
