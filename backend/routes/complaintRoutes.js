@@ -182,7 +182,7 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
   try {
     const complaints = await Complaint.find()
       .populate("user", "fullName username email")
-      .populate("assigned_to", "name type email phone")
+      .populate("assigned_to","username type email phone")
       .sort({ createdAt: -1 });
 
     const formatted = complaints.map((c) => ({
@@ -191,7 +191,7 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
         ? `${c.user?.username || "user123"} / Anonymous`
         : c.user?.fullName || "Unknown User",
       assignedTo: c.assigned_to
-        ? { name: c.assigned_to.name, type: c.assigned_to.type }
+        ? { name: c.assigned_to.username, type: c.assigned_to.type }
         : null,
     }));
     console.log(formatted);

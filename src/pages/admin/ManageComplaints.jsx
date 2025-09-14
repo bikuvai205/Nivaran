@@ -200,7 +200,7 @@ const ManageComplaints = () => {
                           c.assigned_to ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-700"
                         }`}
                       >
-                        {c.assigned_to ? `${c.assigned_to.name} (${c.assigned_to.type})` : "Unassigned"}
+                        {c.assigned_to ? `${c.assigned_to.username} (${c.assigned_to.type})` : "Unassigned"}
                       </span>
                     </div>
 
