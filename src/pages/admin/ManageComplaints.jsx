@@ -1,3 +1,4 @@
+// src/pages/admin/ManageComplaints.jsx
 import React, { useEffect, useState, useMemo } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
@@ -61,7 +62,7 @@ const ManageComplaints = () => {
   }, [filteredComplaints, sortField]);
 
   const getSeverityBadge = (severity) => {
-    const base = "px-2 py-1 rounded-full text-xs font-semibold capitalize";
+    const base = "w-full h-8 flex items-center justify-center rounded-full text-xs font-semibold capitalize";
     const map = {
       low: "bg-green-100 text-green-800",
       medium: "bg-yellow-100 text-yellow-800",
@@ -130,7 +131,7 @@ const ManageComplaints = () => {
                   : "bg-green-100 text-green-800 hover:bg-green-200"
               } transition`}
             >
-              Show Assigned Complaints
+              {showAssigned ? "Show Unassigned Complaints" : "Show Assigned Complaints"}
             </button>
 
             {/* Go to Authority Status button */}
@@ -181,26 +182,44 @@ const ManageComplaints = () => {
                       </div>
                     </div>
 
-                    {/* Metadata badges */}
-                    <div className="flex justify-center gap-3 mt-2 mb-3">
-                      {getSeverityBadge(c.severity)}
+                    {/* Metadata badges (4 fixed boxes) */}
+                    <div className="grid grid-cols-4 gap-3 mt-2 mb-3">
+                      {/* Severity */}
+                      <div>{getSeverityBadge(c.severity)}</div>
+
+                      {/* Status */}
                       <span
-                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-24 text-center capitalize ${
-                          c.status === "Resolved"
-                            ? "bg-green-100 text-green-700"
-                            : c.status === "In Progress"
-                            ? "bg-blue-100 text-blue-700"
-                            : "bg-yellow-100 text-yellow-700"
-                        }`}
+                        className={`w-full h-8 flex items-center justify-center rounded-full text-xs font-medium text-center capitalize
+                          ${
+                            c.status === "Resolved"
+                              ? "bg-green-100 text-green-700"
+                              : c.status === "In Progress"
+                              ? "bg-yellow-100 text-yellow-700"
+                              : c.status === "Assigned"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-gray-200 text-gray-700"
+                          }
+                        `}
                       >
                         {c.status || "Pending"}
                       </span>
+
+                      {/* Unit */}
                       <span
-                        className={`inline-flex items-center justify-center px-3 py-1 rounded-full text-xs font-medium w-32 text-center capitalize ${
+                        className={`w-full h-8 flex items-center justify-center rounded-full text-xs font-medium text-center capitalize ${
                           c.assigned_to ? "bg-indigo-100 text-indigo-700" : "bg-gray-200 text-gray-700"
                         }`}
                       >
-                        {c.assigned_to ? `${c.assigned_to.username} (${c.assigned_to.type})` : "Unassigned"}
+                        {c.assigned_to ? c.assigned_to.type : "No Unit"}
+                      </span>
+
+                      {/* Authority */}
+                      <span
+                        className={`w-full h-8 flex items-center justify-center rounded-full text-xs font-medium text-center capitalize ${
+                          c.assigned_to ? "bg-purple-100 text-purple-700" : "bg-gray-200 text-gray-700"
+                        }`}
+                      >
+                        {c.assigned_to ? c.assigned_to.username : "No Authority"}
                       </span>
                     </div>
 
