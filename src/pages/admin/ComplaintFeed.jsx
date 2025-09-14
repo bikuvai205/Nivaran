@@ -37,7 +37,7 @@ const AdminComplaintFeed = () => {
             : null,
           time: new Date(c.createdAt).toLocaleString(),
         }));
-        console.log("Fetched complaints:", mapped);
+        // console.log("Fetched complaints:", mapped);
 
         setComplaints(mapped);
       } catch (err) {

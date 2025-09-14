@@ -201,7 +201,7 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
           }
         : null,
     }));
-    console.log(formatted);
+    // console.log(formatted);
     res.json(formatted);
   } catch (err) {
     console.error("Error fetching complaints (admin):", err);
