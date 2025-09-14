@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import logo from "../assets/images/logo.png"; // your image path
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -79,12 +80,12 @@ const LoginPage = () => {
     if (role === 'admin') {
       return (
         <>
-          <label className="block text-gray-700 mb-1 w-3/5 mx-auto">Admin ID</label>
+          <label className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">Admin ID</label>
           <input
             type="text"
             value={adminId}
             onChange={(e) => setAdminId(e.target.value)}
-            className="w-3/5 mx-auto border border-gray-300 rounded-md py-2 px-3 mb-4 bg-white"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
             autoComplete="off"
           />
         </>
@@ -92,7 +93,7 @@ const LoginPage = () => {
     } else {
       return (
         <>
-          <label htmlFor="email" className="block text-gray-700 mb-1 w-3/5 mx-auto">
+          <label htmlFor="email" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
             Email
           </label>
           <input
@@ -101,7 +102,7 @@ const LoginPage = () => {
             name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-3/5 mx-auto border border-gray-300 rounded-md py-2 px-3 mb-4 bg-white"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
             autoComplete="off"
           />
         </>
@@ -112,7 +113,7 @@ const LoginPage = () => {
   // Citizen registration fields
   const renderRegisterFormFields = () => (
     <>
-      <label htmlFor="fullName" className="block text-gray-700 mb-1 w-3/5 mx-auto">
+      <label htmlFor="fullName" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
         Full Name
       </label>
       <input
@@ -121,10 +122,10 @@ const LoginPage = () => {
         name="fullName"
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
-        className="w-3/5 mx-auto border border-gray-300 rounded-md py-2 px-3 mb-4 bg-white"
+        className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
         autoComplete="off"
       />
-      <label htmlFor="email" className="block text-gray-700 mb-1 w-3/5 mx-auto">
+      <label htmlFor="email" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
         Email
       </label>
       <input
@@ -133,10 +134,10 @@ const LoginPage = () => {
         name="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        className="w-3/5 mx-auto border border-gray-300 rounded-md py-2 px-3 mb-4 bg-white"
+        className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
         autoComplete="off"
       />
-      <label htmlFor="password" className="block text-gray-700 mb-1 w-3/5 mx-auto">
+      <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
         Password
       </label>
       <input
@@ -145,39 +146,61 @@ const LoginPage = () => {
         name="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        className="w-3/5 mx-auto border border-gray-300 rounded-md py-2 px-3 mb-4 bg-white"
+        className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
         autoComplete="off"
       />
     </>
   );
 
   return (
-    <div className="bg-gradient-to-br from-rose-50 via-white to-rose-100 flex flex-col lg:flex-row justify-center items-center min-h-screen py-5 px-5 overflow-y-auto">
-      <div className="w-full max-w-6xl mx-auto rounded-3xl overflow-hidden shadow-2xl flex flex-col lg:flex-row bg-white lg:h-[90vh]">
-        {/* Left Info Section */}
-        <div className="hidden md:flex w-full lg:w-[40%] h-full flex-col justify-center items-center bg-gradient-to-br from-rose-200 via-rose-100 to-rose-300 text-center p-10 select-none">
-          <motion.h1
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-4xl lg:text-5xl font-extrabold text-rose-800 mb-4 drop-shadow-sm"
-          >
-            Nivaran
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-            className="text-base lg:text-lg text-rose-900 font-medium max-w-xs mx-auto mb-4"
-          >
-            Nivaran is a digital complaint portal connecting citizens, authorities, and admins.
-          </motion.p>
+    <div className="min-h-screen h-screen w-full flex flex-col lg:flex-row m-0 p-0 overflow-hidden">
+      <div className="w-full h-full flex flex-col lg:flex-row">
+        {/* Left Info Section with Background Image and Pink Overlay */}
+        <div
+          className="w-full lg:w-1/2 h-[40vh] lg:h-full relative flex items-center justify-center"
+          style={{
+            backgroundImage: `url(${logo})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            backgroundRepeat: "no-repeat",
+          }}
+        >
+          {/* Pink overlay */}
+          <div className="absolute inset-0 bg-gradient-to-br from-pink-500/70 via-rose-500/60 to-pink-700/70 mix-blend-multiply"></div>
+
+          {/* Text block */}
+          <div className="relative z-10 text-center px-4 py-4 sm:px-6 sm:py-6 md:px-12 md:py-10 bg-white/10 backdrop-blur-md rounded-2xl shadow-lg max-w-sm sm:max-w-md">
+            <motion.h1
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white drop-shadow-lg"
+            >
+              Welcome to Nivaran
+            </motion.h1>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              className="mt-4 text-base sm:text-lg lg:text-xl text-white/90 font-medium"
+            >
+              Add Your Voice, Our Action
+            </motion.p>
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="mt-2 text-sm sm:text-base text-white/80"
+            >
+              Nivaran is a citizen-driven complaint management platform that empowers communities to report, track, and resolve local issues efficiently.
+            </motion.p>
+          </div>
         </div>
 
         {/* Right Login/Register Form */}
-        <div className="w-full lg:w-[60%] p-6 sm:p-10 md:p-14 lg:p-16 flex flex-col justify-center">
+        <div className="w-full lg:w-1/2 h-[60vh] lg:h-full p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-center bg-rose-50/30 backdrop-blur-md">
           {/* Role Selector */}
-          <div className="flex justify-center gap-4 mb-8">
+          <div className="flex justify-center gap-2 sm:gap-4 mb-4 sm:mb-6">
             {['citizen', 'admin', 'authority'].map((r) => (
               <button
                 key={r}
@@ -190,8 +213,8 @@ const LoginPage = () => {
                   setPassword('');
                   setFullName('');
                 }}
-                className={`px-6 py-2 rounded-full text-sm font-medium transition-all border shadow-sm ${
-                  role === r ? 'bg-rose-500 text-white' : 'text-gray-700 hover:bg-rose-100'
+                className={`px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all border border-rose-200 shadow-sm ${
+                  role === r ? 'bg-rose-500 text-white' : 'text-rose-700 hover:bg-rose-100/50'
                 }`}
               >
                 {r.charAt(0).toUpperCase() + r.slice(1)}
@@ -207,16 +230,16 @@ const LoginPage = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.4 }}
-              className="w-full bg-white bg-opacity-30 backdrop-blur-md rounded-xl py-8 border border-white border-opacity-30 shadow-lg"
+              className="w-full bg-rose-100/30 backdrop-blur-md rounded-xl py-4 sm:py-6 border border-rose-200 shadow-lg"
             >
-              <h1 className="text-2xl font-semibold mb-6 text-center text-rose-700">
+              <h1 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4 sm:mb-6 text-center text-rose-700">
                 {registering ? 'Citizen Registration' : `${role.charAt(0).toUpperCase() + role.slice(1)} Login`}
               </h1>
               <form onSubmit={handleSubmit} className="flex flex-col items-center">
                 {registering ? renderRegisterFormFields() : renderLoginFormFields()}
                 {!registering && (
                   <>
-                    <label htmlFor="password" className="block text-gray-800 mb-1 w-3/5 mx-auto">
+                    <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
                       Password
                     </label>
                     <input
@@ -225,26 +248,26 @@ const LoginPage = () => {
                       name="password"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      className="w-3/5 mx-auto border border-gray-300 rounded-md py-2 px-3 mb-4 bg-white"
+                      className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
                       autoComplete="off"
                     />
                   </>
                 )}
                 <button
                   type="submit"
-                  className="bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-md py-2 px-4 w-3/5 mx-auto"
+                  className="bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-md py-2 px-4 w-11/12 sm:w-3/5 mx-auto"
                 >
                   {registering ? 'Register' : 'Login'}
                 </button>
-                {loginMessage && <p className="text-sm text-center text-red-500 mt-4">{loginMessage}</p>}
+                {loginMessage && <p className="text-xs sm:text-sm text-center text-rose-600 mt-4">{loginMessage}</p>}
               </form>
 
               {/* Toggle Registration */}
-              <div className="mt-6 text-rose-600 text-center h-8">
+              <div className="mt-4 sm:mt-6 text-rose-600 text-center h-8">
                 {role === 'citizen' && !registering && (
                   <button
                     onClick={() => setRegistering(true)}
-                    className="hover:underline cursor-pointer bg-transparent border-none text-rose-600 font-semibold"
+                    className="hover:underline cursor-pointer bg-transparent border-none text-rose-600 font-semibold text-xs sm:text-sm"
                   >
                     Register as Citizen
                   </button>
