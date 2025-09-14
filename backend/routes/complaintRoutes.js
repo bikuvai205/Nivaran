@@ -178,11 +178,12 @@ router.delete("/:id", authMiddleware, async (req, res) => {
 });
 
 // -------------------- ADMIN: VIEW ALL COMPLAINTS --------------------
+// -------------------- ADMIN: VIEW ALL COMPLAINTS --------------------
 router.get("/admin", adminAuthMiddleware, async (req, res) => {
   try {
     const complaints = await Complaint.find()
       .populate("user", "fullName username email")
-      .populate("assigned_to","username type email phone")
+      .populate("assigned_to", "username type email phone")
       .sort({ createdAt: -1 });
 
     const formatted = complaints.map((c) => ({
@@ -190,13 +191,20 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
       displayUser: c.anonymous
         ? `${c.user?.username || "user123"} / Anonymous`
         : c.user?.fullName || "Unknown User",
+      // 🔑 Normalize `assigned_to` → `assignedTo`
       assignedTo: c.assigned_to
-        ? { name: c.assigned_to.username, type: c.assigned_to.type }
+        ? {
+            username: c.assigned_to.username,
+            type: c.assigned_to.type,
+            email: c.assigned_to.email,
+            phone: c.assigned_to.phone,
+          }
         : null,
     }));
     console.log(formatted);
     res.json(formatted);
   } catch (err) {
+    console.error("Error fetching complaints (admin):", err);
     res.status(500).json({ message: "Server error" });
   }
 });

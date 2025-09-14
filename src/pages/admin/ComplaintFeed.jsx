@@ -28,7 +28,7 @@ const AdminComplaintFeed = () => {
           severity: c.severity,
           status: c.status,
           assignedTo: c.assignedTo
-            ? `${c.assignedTo.username} (${c.assignedTo.type})`
+            ? `${c.assignedTo.name} (${c.assignedTo.type})`
             : "Not Assigned",
           upvotes: c.upvotes,
           downvotes: c.downvotes,
@@ -37,7 +37,7 @@ const AdminComplaintFeed = () => {
             : null,
           time: new Date(c.createdAt).toLocaleString(),
         }));
-        console
+        console.log("Fetched complaints:", mapped);
 
         setComplaints(mapped);
       } catch (err) {
