@@ -68,7 +68,11 @@ const AdminDashboardHome = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       console.log("Status:", res.data);
-      setStatusData(res.data.map((s) => ({ name: s.name, value: s.value })));
+      setStatusData(res.data.map((s) => ({ name: s.name.toLowerCase()==="pending"?"Pending": s.name.toLowerCase() === "resolved" ? "Resolved"
+      : s.name.toLowerCase() === "assigned" ? "Assigned"
+      : s.name.toLowerCase() === "inprogress" ? "In Progress"
+      : s.name,
+       value: s.value })));
     } catch (err) {
       console.error("Status fetch error:", err);
     } finally {
