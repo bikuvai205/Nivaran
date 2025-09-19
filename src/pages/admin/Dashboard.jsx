@@ -117,6 +117,24 @@ const AdminDashboardHome = () => {
       setLoadingTrend(false);
     }
   };
+  // ---------- FETCH AUTHORITY PERFORMANCE (Optional) ----------
+const [authorityData, setAuthorityData] = useState([]);
+const [loadingAuthority, setLoadingAuthority] = useState(false);
+  const fetchAuthorityPerformance = async () => {
+  setLoadingAuthority(true);
+  try {
+    const res = await axios.get("http://localhost:5000/api/admin/dashboard/authority-performance", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    console.log("Authority Performance:", res.data);
+    setAuthorityData(res.data);
+  } catch (err) {
+    console.error("Authority performance fetch error:", err);
+  } finally {
+    setLoadingAuthority(false);
+  }
+};
+
 
   useEffect(() => {
     if (token) {
@@ -124,6 +142,7 @@ const AdminDashboardHome = () => {
       fetchStatus();
       fetchCategory();
       fetchTrend();
+      fetchAuthorityPerformance(); // Optional
     } else {
       setError("No admin token found. Please login again.");
     }
@@ -174,6 +193,30 @@ const AdminDashboardHome = () => {
           ))
         ) : null}
       </div>
+
+      
+      {/* AUTHORITY PERFORMANCE CHART */}
+<div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">
+  <h3 className="text-xl font-semibold text-rose-700 mb-4">Authority Performance by Type</h3>
+  {loadingAuthority ? (
+    <div className="flex justify-center items-center h-64">
+      <Loader2 className="w-10 h-10 animate-spin text-rose-500" />
+    </div>
+  ) : (
+    <ResponsiveContainer width="100%" height={300}>
+      <BarChart data={authorityData}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="type" />
+        <YAxis allowDecimals={false} />
+        <Tooltip />
+        <Legend />
+        <Bar dataKey="resolved" fill="#8AFF33" name="Resolved" />
+        <Bar dataKey="pending" fill="#FF6384" name="Pending" />
+      </BarChart>
+    </ResponsiveContainer>
+  )}
+</div>
+
 
       {/* STATUS PIE CHART */}
       <div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">

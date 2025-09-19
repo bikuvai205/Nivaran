@@ -34,32 +34,6 @@ router.get("/summary", adminAuthMiddleware, async (req, res) => {
   }
 });
 
-// ------------------ TOP AUTHORITIES (by resolved complaints) ------------------
-router.get("/top-authorities", adminAuthMiddleware, async (req, res) => {
-  try {
-    const topAuthorities = await Complaint.aggregate([
-      { $match: { status: "resolved" } },
-      { $group: { _id: "$assignedTo", resolvedCount: { $sum: 1 } } },
-      {
-        $lookup: {
-          from: "authorities",
-          localField: "_id",
-          foreignField: "_id",
-          as: "authority",
-        },
-      },
-      { $unwind: "$authority" },
-      { $sort: { resolvedCount: -1 } },
-      { $limit: 5 },
-    ]);
-
-    res.json(topAuthorities);
-  } catch (err) {
-    console.error("Error fetching top authorities:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
 // ------------------ COMPLAINTS BY CATEGORY ------------------
 router.get("/complaints-by-category", adminAuthMiddleware, async (req, res) => {
   try {
@@ -94,5 +68,53 @@ router.get("/complaints-per-day", adminAuthMiddleware, async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+
+// ---------- AUTHORITY PERFORMANCE ----------
+router.get("/authority-performance", adminAuthMiddleware, async (req, res) => {
+  try {
+    const result = await Complaint.aggregate([
+      {
+        $lookup: {
+          from: "authorities",
+          localField: "assigned_to",
+          foreignField: "_id",
+          as: "authority",
+        },
+      },
+      { $unwind: "$authority" },
+      {
+        $group: {
+          _id: "$authority.type",
+          resolved: {
+            $sum: { $cond: [{ $eq: ["$status", "resolved"] }, 1, 0] },
+          },
+          pending: {
+            $sum: {
+              $cond: [
+                { $in: ["$status", ["pending", "assigned", "inprogress"]] },
+                1,
+                0,
+              ],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          type: "$_id",
+          resolved: 1,
+          pending: 1,
+          _id: 0,
+        },
+      },
+    ]);
+
+    res.json(result);
+  } catch (err) {
+    console.error("Authority performance error:", err);
+    res.status(500).json({ error: "Failed to fetch authority performance" });
+  }
+});
+
 
 module.exports = router;
