@@ -21,7 +21,8 @@ const complaintSchema = new mongoose.Schema(
       },
     ],
 assigned_to: { type: mongoose.Schema.Types.ObjectId, ref: "Authority", default: null },
-
+solvedAt: { type: Date },
+ assignedAt: { type: Date },
     status: {
       type: String,
       enum: ["pending", "assigned","inprogress", "resolved"],

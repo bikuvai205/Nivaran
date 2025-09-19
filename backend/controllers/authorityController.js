@@ -55,7 +55,7 @@ const loginAuthority = async (req, res) => {
     );
 
     res.status(200).json({
-      message: `Welcome ${authority.name}`,
+      message: `Welcome ${authority.username}`,
       token,
       authority: {
         id: authority._id,

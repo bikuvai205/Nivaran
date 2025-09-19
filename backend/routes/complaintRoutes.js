@@ -314,6 +314,7 @@ router.post("/assign", adminAuthMiddleware, async (req, res) => {
 
     complaint.assigned_to = authorityId;
     complaint.status = "assigned";
+    complaint.assignedAt = new Date(); 
     await complaint.save();
 
     authority.status = "assigned";
@@ -417,17 +418,60 @@ router.get("/assigned", protectAuthority, async (req, res) => {
       createdAt: -1,
     });
 
-    const tasksWithAssignedAt = tasks.map((t) => ({
+    const tasksWithTimestamps = tasks.map((t) => ({
       ...t.toObject(),
-      assignedAt: t.updatedAt,
+      assignedAt: t.assignedAt || null, // use assignedAt field
+      solvedAt: t.solvedAt || null,     // already stored in schema
     }));
 
-    res.json(tasksWithAssignedAt);
+    res.json(tasksWithTimestamps);
   } catch (err) {
     res.status(500).json({ message: "Failed to fetch assigned tasks" });
   }
 });
 
+
+
+// -------------------- AUTHORITY: MARK AS RESOLVED --------------------
+// router.post("/:id/resolve", protectAuthority, async (req, res) => {
+//   try {
+//     const complaintId = req.params.id;
+//     const authorityId = req.authority._id;
+
+//     const complaint = await Complaint.findById(complaintId);
+//     const authority = await Authority.findById(authorityId);
+
+//     if (!complaint || !authority)
+//       return res
+//         .status(404)
+//         .json({ message: "Complaint or Authority not found" });
+
+//     if (
+//       !complaint.assigned_to ||
+//       complaint.assigned_to.toString() !== authorityId.toString()
+//     )
+//       return res
+//         .status(403)
+//         .json({ message: "You are not assigned to this complaint" });
+
+//     if (complaint.status !== "inprogress")
+//       return res
+//         .status(400)
+//         .json({ message: "Only in-progress complaints can be resolved" });
+
+//     complaint.status = "resolved";
+//     complaint.solvedAt = new Date();
+//     await complaint.save();
+
+//     authority.status = "free";
+//     await authority.save();
+
+//     res.json({ message: "Complaint marked as resolved.", complaint });
+//   } catch (err) {
+//     console.error("Error resolving complaint:", err);
+//     res.status(500).json({ message: "Failed to mark complaint as resolved" });
+//   }
+// });
 // -------------------- AUTHORITY: MARK AS RESOLVED --------------------
 router.post("/:id/resolve", protectAuthority, async (req, res) => {
   try {
@@ -438,27 +482,23 @@ router.post("/:id/resolve", protectAuthority, async (req, res) => {
     const authority = await Authority.findById(authorityId);
 
     if (!complaint || !authority)
-      return res
-        .status(404)
-        .json({ message: "Complaint or Authority not found" });
+      return res.status(404).json({ message: "Complaint or Authority not found" });
 
     if (
       !complaint.assigned_to ||
       complaint.assigned_to.toString() !== authorityId.toString()
     )
-      return res
-        .status(403)
-        .json({ message: "You are not assigned to this complaint" });
+      return res.status(403).json({ message: "You are not assigned to this complaint" });
 
     if (complaint.status !== "inprogress")
-      return res
-        .status(400)
-        .json({ message: "Only in-progress complaints can be resolved" });
+      return res.status(400).json({ message: "Only in-progress complaints can be resolved" });
 
+    // Update status and save timestamp
     complaint.status = "resolved";
-    complaint.solvedAt = new Date();
+    complaint.solvedAt = new Date(); // <-- this ensures timestamp is saved
     await complaint.save();
 
+    // Set authority as free
     authority.status = "free";
     await authority.save();
 
@@ -468,5 +508,6 @@ router.post("/:id/resolve", protectAuthority, async (req, res) => {
     res.status(500).json({ message: "Failed to mark complaint as resolved" });
   }
 });
+
 
 module.exports = router;

@@ -138,7 +138,7 @@ const ComplaintFeed = ({ citizen, token }) => {
                     <img
                       src={complaint.image}
                       alt="Complaint"
-                      className="max-h-[300px] sm:max-h-[400px] w-full object-cover"
+                      className="max-h-[300px] sm:max-h-[400px] w-full object-contain"
                     />
                   </div>
                 )}

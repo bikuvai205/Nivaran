@@ -152,7 +152,7 @@ const MyComplaints = ({ citizen, token }) => {
                   <img
                     src={`http://localhost:5000/uploads/complaints/${c.image}`}
                     alt="Complaint"
-                    className="mt-4 rounded-xl max-h-48 sm:max-h-64 w-full object-cover border border-rose-200/50"
+                    className="mt-4 rounded-xl max-h-48 sm:max-h-64 w-full object-contain border border-rose-200/50"
                   />
                 )}
               </div>
