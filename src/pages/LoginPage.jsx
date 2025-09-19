@@ -14,6 +14,8 @@ const LoginPage = () => {
   const [email, setEmail] = useState(''); // For authority and citizen login
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState(''); // For citizen registration
+  const [otp, setOtp] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
   const [loginMessage, setLoginMessage] = useState('');
 
   // Handle login/registration
@@ -45,16 +47,49 @@ const LoginPage = () => {
         navigate('/authority/dashboard');
       } else if (role === 'citizen') {
         if (registering) {
-          // Citizen registration
-          const res = await axios.post('http://localhost:5000/api/citizens/register', {
-            fullName,
-            email,
-            password,
-          });
-          setLoginMessage('✅ Registration successful! You can now login.');
-          setRegistering(false);
+          // Step 1: Send OTP for registration
+          if (!otpSent) {
+            if (!fullName || !email || !password) {
+              setLoginMessage('⚠️ Please fill all fields to register!');
+              return;
+            }
+            const res = await axios.post('http://localhost:5000/api/citizens/register', {
+              fullName,
+              email,
+              password,
+            });
+            setLoginMessage('✅ OTP sent to your email. Please verify.');
+            setOtpSent(true);
+            return; // Stop here to wait for OTP input
+          } else {
+            // Step 2: Verify OTP
+            if (!otp) {
+              setLoginMessage('⚠️ Please enter the OTP sent to your email!');
+              return;
+            }
+            await axios.post('http://localhost:5000/api/citizens/verify-otp', { email, otp });
+            setLoginMessage('✅ Email verified! Logging you in...');
+
+            // Add a small delay to ensure backend has processed the verification
+            setTimeout(async () => {
+              try {
+                // Auto-login with the same credentials
+                const loginRes = await axios.post('http://localhost:5000/api/citizens/login', {
+                  email,
+                  password,
+                });
+                localStorage.setItem('citizenToken', loginRes.data.token);
+                setLoginMessage(`🎉 ${loginRes.data.message}`);
+                navigate('/citizen/dashboard');
+              } catch (loginErr) {
+                console.error('Auto-login failed:', loginErr);
+                setLoginMessage('❌ Auto-login failed. Please login manually.');
+                setOtpSent(false); // Allow retry
+              }
+            }, 1000); // 1 second delay
+          }
         } else {
-          // Citizen login
+          // Normal citizen login
           if (!email || !password) {
             setLoginMessage('⚠️ Please enter both email and password!');
             return;
@@ -88,6 +123,14 @@ const LoginPage = () => {
             className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
             autoComplete="off"
           />
+          <label className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">Password</label>
+          <input
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            autoComplete="off"
+          />
         </>
       );
     } else {
@@ -99,9 +142,19 @@ const LoginPage = () => {
           <input
             type="email"
             id="email"
-            name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            autoComplete="off"
+          />
+          <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
+            Password
+          </label>
+          <input
+            type="password"
+            id="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
             autoComplete="off"
           />
@@ -119,7 +172,6 @@ const LoginPage = () => {
       <input
         type="text"
         id="fullName"
-        name="fullName"
         value={fullName}
         onChange={(e) => setFullName(e.target.value)}
         className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
@@ -131,7 +183,6 @@ const LoginPage = () => {
       <input
         type="email"
         id="email"
-        name="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
@@ -143,12 +194,24 @@ const LoginPage = () => {
       <input
         type="password"
         id="password"
-        name="password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
         autoComplete="off"
       />
+      {otpSent && (
+        <>
+          <label htmlFor="otp" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">Enter OTP</label>
+          <input
+            type="text"
+            id="otp"
+            value={otp}
+            onChange={(e) => setOtp(e.target.value)}
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            autoComplete="off"
+          />
+        </>
+      )}
     </>
   );
 
@@ -184,7 +247,7 @@ const LoginPage = () => {
               transition={{ duration: 0.8 }}
               className="mt-4 text-base sm:text-lg lg:text-xl text-white/90 font-medium"
             >
-               "Your Voice, Our Action"
+              "Your Voice, Our Action"
             </motion.p>
             <motion.p
               initial={{ opacity: 0, y: 20 }}
@@ -207,11 +270,13 @@ const LoginPage = () => {
                 onClick={() => {
                   setRole(r);
                   setRegistering(false);
+                  setOtpSent(false);
                   setLoginMessage('');
                   setAdminId('');
                   setEmail('');
                   setPassword('');
                   setFullName('');
+                  setOtp('');
                 }}
                 className={`px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all border border-rose-200 shadow-sm ${
                   role === r ? 'bg-rose-500 text-white' : 'text-rose-700 hover:bg-rose-100/50'
@@ -225,7 +290,7 @@ const LoginPage = () => {
           {/* Animated Form */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${role}-${registering}`}
+              key={`${role}-${registering}-${otpSent}`}
               initial={{ opacity: 0, x: 100 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
@@ -237,27 +302,11 @@ const LoginPage = () => {
               </h1>
               <form onSubmit={handleSubmit} className="flex flex-col items-center">
                 {registering ? renderRegisterFormFields() : renderLoginFormFields()}
-                {!registering && (
-                  <>
-                    <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
-                      Password
-                    </label>
-                    <input
-                      type="password"
-                      id="password"
-                      name="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
-                      autoComplete="off"
-                    />
-                  </>
-                )}
                 <button
                   type="submit"
                   className="bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-md py-2 px-4 w-11/12 sm:w-3/5 mx-auto"
                 >
-                  {registering ? 'Register' : 'Login'}
+                  {registering ? (otpSent ? 'Verify OTP' : 'Register') : 'Login'}
                 </button>
                 {loginMessage && <p className="text-xs sm:text-sm text-center text-rose-600 mt-4">{loginMessage}</p>}
               </form>
