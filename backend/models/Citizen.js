@@ -13,6 +13,9 @@ const citizenSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// TTL index to auto-delete unverified users after OTP expires
+citizenSchema.index({ otpExpires: 1 }, { expireAfterSeconds: 0, partialFilterExpression: { isVerified: false } });
+
 // Hash password before saving
 citizenSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
