@@ -12,6 +12,7 @@ const adminRoutes = require('./routes/adminRoute');
 const authorityRoutes = require('./routes/authorities');
 const citizenRoutes = require('./routes/citizenRoutes');
 const complaintRoutes = require("./routes/complaintRoutes");
+const admindashboardRoutes = require("./routes/admindashboardRoute");
 
 
 
@@ -29,6 +30,7 @@ app.use(express.json());
 // Routes
 app.use('/admin', adminAuthRoutes); // Admin login
 app.use('/admin', adminRoutes);     // Admin password management
+app.use('/api/admin/dashboard', admindashboardRoutes); // Admin dashboard routes
 app.use('/api/authorities', authorityRoutes); // Authority register & login
 app.use('/api/citizens', citizenRoutes); // Citizen register & login
 app.use("/uploads", express.static(path.join(__dirname, "uploads"))); // Serve uploads folder as static

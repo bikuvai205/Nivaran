@@ -296,48 +296,6 @@ router.get("/status-count", async (req, res) => {
   }
 });
 
-
-
-router.get("/summary", async (req, res) => {
-  try {
-    const totalAuthorities = await Authority.countDocuments();
-    const totalCitizens = await Citizen.countDocuments();
-    const totalTasks = await Complaint.countDocuments();
-
-    // Count complaints per status
-    const statusAggregation = await Complaint.aggregate([
-      {
-        $group: {
-          _id: "$status",
-          count: { $sum: 1 },
-        },
-      },
-    ]);
-
-    // Convert array to object
-    const statusCounts = statusAggregation.reduce((acc, curr) => {
-      acc[curr._id] = curr.count;
-      return acc;
-    }, {
-      pending: 0,
-      assigned: 0,
-      inprogress: 0,
-      resolved: 0,
-    });
-
-    res.json({
-      totalAuthorities,
-      totalCitizens,
-      totalTasks,
-      statusCounts,
-    });
-  } catch (err) {
-    console.error("Error fetching summary:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
 // -------------------- ADMIN: ASSIGN AUTHORITY --------------------
 router.post("/assign", adminAuthMiddleware, async (req, res) => {
   try {
