@@ -15,10 +15,18 @@ import {
   Cell,
   LineChart,
   Line,
-  Legend
+  Legend,
 } from "recharts";
 
-const COLORS = ["#FF6384", "#36A2EB", "#FFCE56", "#8AFF33", "#FF8A33", "#33FFD5", "#9B33FF"];
+const COLORS = [
+  "#FF6384",
+  "#36A2EB",
+  "#FFCE56",
+  "#8AFF33",
+  "#FF8A33",
+  "#33FFD5",
+  "#9B33FF",
+];
 const STATUS_COLORS = {
   Pending: "#FF6384",
   Assigned: "#36A2EB",
@@ -47,9 +55,12 @@ const AdminDashboardHome = () => {
   const fetchSummary = async () => {
     setLoadingSummary(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/dashboard/summary", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/dashboard/summary",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       console.log("Summary:", res.data);
       setSummary(res.data);
     } catch (err) {
@@ -64,15 +75,28 @@ const AdminDashboardHome = () => {
   const fetchStatus = async () => {
     setLoadingStatus(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/complaints/status-count", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/complaints/status-count",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       console.log("Status:", res.data);
-      setStatusData(res.data.map((s) => ({ name: s.name.toLowerCase()==="pending"?"Pending": s.name.toLowerCase() === "resolved" ? "Resolved"
-      : s.name.toLowerCase() === "assigned" ? "Assigned"
-      : s.name.toLowerCase() === "inprogress" ? "In Progress"
-      : s.name,
-       value: s.value })));
+      setStatusData(
+        res.data.map((s) => ({
+          name:
+            s.name.toLowerCase() === "pending"
+              ? "Pending"
+              : s.name.toLowerCase() === "resolved"
+              ? "Resolved"
+              : s.name.toLowerCase() === "assigned"
+              ? "Assigned"
+              : s.name.toLowerCase() === "inprogress"
+              ? "In Progress"
+              : s.name,
+          value: s.value,
+        }))
+      );
     } catch (err) {
       console.error("Status fetch error:", err);
     } finally {
@@ -84,9 +108,12 @@ const AdminDashboardHome = () => {
   const fetchCategory = async () => {
     setLoadingCategory(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/dashboard/complaints-by-category", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/dashboard/complaints-by-category",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       console.log("Category:", res.data);
       setCategoryData(
         res.data.map((c, idx) => ({
@@ -106,9 +133,12 @@ const AdminDashboardHome = () => {
   const fetchTrend = async () => {
     setLoadingTrend(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/admin/dashboard/complaints-per-day", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/dashboard/complaints-per-day",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
       console.log("Trend:", res.data);
       setTrendData(res.data);
     } catch (err) {
@@ -118,23 +148,25 @@ const AdminDashboardHome = () => {
     }
   };
   // ---------- FETCH AUTHORITY PERFORMANCE (Optional) ----------
-const [authorityData, setAuthorityData] = useState([]);
-const [loadingAuthority, setLoadingAuthority] = useState(false);
+  const [authorityData, setAuthorityData] = useState([]);
+  const [loadingAuthority, setLoadingAuthority] = useState(false);
   const fetchAuthorityPerformance = async () => {
-  setLoadingAuthority(true);
-  try {
-    const res = await axios.get("http://localhost:5000/api/admin/dashboard/authority-performance", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    console.log("Authority Performance:", res.data);
-    setAuthorityData(res.data);
-  } catch (err) {
-    console.error("Authority performance fetch error:", err);
-  } finally {
-    setLoadingAuthority(false);
-  }
-};
-
+    setLoadingAuthority(true);
+    try {
+      const res = await axios.get(
+        "http://localhost:5000/api/admin/dashboard/authority-performance",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      console.log("Authority Performance:", res.data);
+      setAuthorityData(res.data);
+    } catch (err) {
+      console.error("Authority performance fetch error:", err);
+    } finally {
+      setLoadingAuthority(false);
+    }
+  };
 
   useEffect(() => {
     if (token) {
@@ -158,7 +190,7 @@ const [loadingAuthority, setLoadingAuthority] = useState(false);
 
   return (
     <div className="min-h-screen w-full p-6 space-y-8 bg-gradient-to-br from-rose-50/50 via-white to-pink-50/50">
-    {/* Back Button */}
+      {/* Back Button */}
       <button
         onClick={() => navigate(-1)}
         className="flex items-center gap-2 text-rose-600 font-semibold hover:text-rose-700 mb-4"
@@ -194,33 +226,35 @@ const [loadingAuthority, setLoadingAuthority] = useState(false);
         ) : null}
       </div>
 
-      
       {/* AUTHORITY PERFORMANCE CHART */}
-<div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">
-  <h3 className="text-xl font-semibold text-rose-700 mb-4">Authority Performance by Type</h3>
-  {loadingAuthority ? (
-    <div className="flex justify-center items-center h-64">
-      <Loader2 className="w-10 h-10 animate-spin text-rose-500" />
-    </div>
-  ) : (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={authorityData}>
-        <CartesianGrid strokeDasharray="3 3" />
-        <XAxis dataKey="type" />
-        <YAxis allowDecimals={false} />
-        <Tooltip />
-        <Legend />
-        <Bar dataKey="resolved" fill="#8AFF33" name="Resolved" />
-        <Bar dataKey="pending" fill="#FF6384" name="Pending" />
-      </BarChart>
-    </ResponsiveContainer>
-  )}
-</div>
-
+      <div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">
+        <h3 className="text-xl font-semibold text-rose-700 mb-4">
+          Authority Performance by Type
+        </h3>
+        {loadingAuthority ? (
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="w-10 h-10 animate-spin text-rose-500" />
+          </div>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={authorityData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="type" />
+              <YAxis allowDecimals={false} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="resolved" fill="#8AFF33" name="Resolved" />
+              <Bar dataKey="pending" fill="#FF6384" name="Pending" />
+            </BarChart>
+          </ResponsiveContainer>
+        )}
+      </div>
 
       {/* STATUS PIE CHART */}
       <div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">
-        <h3 className="text-xl font-semibold text-rose-700 mb-4">Complaints by Status</h3>
+        <h3 className="text-xl font-semibold text-rose-700 mb-4">
+          Complaints by Status
+        </h3>
         {loadingStatus ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="w-10 h-10 animate-spin text-rose-500" />
@@ -228,9 +262,20 @@ const [loadingAuthority, setLoadingAuthority] = useState(false);
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <PieChart>
-              <Pie data={statusData} dataKey="value" nameKey="name" outerRadius={100} label>
+              <Pie
+                data={statusData}
+                dataKey="value"
+                nameKey="name"
+                outerRadius={100}
+                label
+              >
                 {statusData.map((entry, index) => (
-                  <Cell key={index} fill={STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]} />
+                  <Cell
+                    key={index}
+                    fill={
+                      STATUS_COLORS[entry.name] || COLORS[index % COLORS.length]
+                    }
+                  />
                 ))}
               </Pie>
               <Tooltip />
@@ -242,7 +287,9 @@ const [loadingAuthority, setLoadingAuthority] = useState(false);
 
       {/* CATEGORY BAR CHART */}
       <div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">
-        <h3 className="text-xl font-semibold text-rose-700 mb-4">Complaints by Category</h3>
+        <h3 className="text-xl font-semibold text-rose-700 mb-4">
+          Complaints by Category
+        </h3>
         {loadingCategory ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="w-10 h-10 animate-spin text-rose-500" />
@@ -266,7 +313,9 @@ const [loadingAuthority, setLoadingAuthority] = useState(false);
 
       {/* TREND LINE CHART */}
       <div className="bg-rose-100/30 shadow-lg rounded-2xl p-6 border border-rose-200/50">
-        <h3 className="text-xl font-semibold text-rose-700 mb-4">Complaints Per Day</h3>
+        <h3 className="text-xl font-semibold text-rose-700 mb-4">
+          Complaints Per Day
+        </h3>
         {loadingTrend ? (
           <div className="flex justify-center items-center h-64">
             <Loader2 className="w-10 h-10 animate-spin text-rose-500" />
@@ -278,7 +327,12 @@ const [loadingAuthority, setLoadingAuthority] = useState(false);
               <XAxis dataKey="date" />
               <YAxis allowDecimals={false} />
               <Tooltip />
-              <Line type="monotone" dataKey="count" stroke="#FF6384" strokeWidth={3} />
+              <Line
+                type="monotone"
+                dataKey="count"
+                stroke="#FF6384"
+                strokeWidth={3}
+              />
             </LineChart>
           </ResponsiveContainer>
         )}
