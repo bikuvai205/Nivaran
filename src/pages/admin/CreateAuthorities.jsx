@@ -74,12 +74,11 @@ export default function CreateAuthorities() {
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8 border border-rose-100">
 
         {/* 🔙 Back Button */}
-        <button
-          onClick={() => navigate(-1)}
-          className="flex items-center gap-2 text-rose-600 hover:text-rose-800 mb-6"
+      <button
+          onClick={() => navigate("/homepage")}
+          className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
         >
-          <ArrowLeft size={20} />
-          <span className="font-medium">Back</span>
+          <ArrowLeft size={24} className="text-rose-700" />
         </button>
 
         {/* title */}

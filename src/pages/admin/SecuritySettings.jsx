@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-
+import { ArrowLeft } from 'lucide-react';
 const SecuritySettings = () => {
   const navigate = useNavigate();
   const [adminId] = useState('admin123'); // Replace with dynamic admin ID if using auth
@@ -29,12 +29,12 @@ const SecuritySettings = () => {
   return (
     <div className="min-h-screen bg-rose-50 py-10 px-6">
       {/* Go Back */}
-      <button
-        className="text-rose-600 hover:text-rose-800 font-semibold mb-6"
-        onClick={() => navigate('/homepage')}
-      >
-        ← Go Back
-      </button>
+     <button
+          onClick={() => navigate("/homepage")}
+          className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
+        >
+          <ArrowLeft size={24} className="text-rose-700" />
+        </button>
 
       {/* Form */}
       <div className="max-w-md mx-auto bg-white shadow-lg rounded-xl p-8">

@@ -191,12 +191,12 @@ const AdminDashboardHome = () => {
   return (
     <div className="min-h-screen w-full p-6 space-y-8 bg-gradient-to-br from-rose-50/50 via-white to-pink-50/50">
       {/* Back Button */}
-      <button
-        onClick={() => navigate(-1)}
-        className="flex items-center gap-2 text-rose-600 font-semibold hover:text-rose-700 mb-4"
-      >
-        <ArrowLeft className="w-5 h-5" /> Back to Home
-      </button>
+     <button
+          onClick={() => navigate(-1)}
+          className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
+        >
+          <ArrowLeft size={24} className="text-rose-700" />
+        </button>
 
       <h2 className="text-3xl font-extrabold text-rose-600 mb-6 border-b-2 border-rose-200/50 pb-3">
         Admin Dashboard

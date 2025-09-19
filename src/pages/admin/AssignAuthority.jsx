@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import axios from "axios";
+import { ArrowLeft } from "lucide-react";
 
 const AssignAuthority = () => {
   const { complaintId } = useParams();
@@ -100,11 +101,11 @@ const AssignAuthority = () => {
     <div className="p-10 min-h-screen bg-gradient-to-br from-rose-50 to-pink-100 relative">
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-8 gap-4">
-        <button
+      <button
           onClick={() => navigate(-1)}
-          className="px-4 py-2 bg-rose-200 hover:bg-rose-300 text-rose-700 font-semibold rounded-xl shadow-sm transition"
+          className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
         >
-          ← Back
+          <ArrowLeft size={24} className="text-rose-700" />
         </button>
 
         <h1 className="text-3xl font-bold text-rose-700">Authority Status</h1>
@@ -201,7 +202,7 @@ const AssignAuthority = () => {
           <div className="bg-white rounded-2xl shadow-xl p-6 w-80 text-center">
             <h2 className="text-xl font-bold mb-4 text-rose-700">Confirm Assignment</h2>
             <p className="mb-6">
-              Are you sure you want to assign this complaint to <strong>{confirmAuthority.name}</strong>?
+              Are you sure you want to assign this complaint to <strong>{confirmAuthority.username}</strong> of<strong> {confirmAuthority.name}</strong>?
             </p>
             <div className="flex justify-center gap-4">
               <button

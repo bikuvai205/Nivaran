@@ -37,12 +37,13 @@ const ManageComplaints = () => {
 
   // Filter + search
   const filteredComplaints = useMemo(() => {
-    return complaints.filter(
-      (c) =>
-        (showAssigned ? c.assigned_to : !c.assigned_to) &&
-        c.title.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }, [complaints, searchTerm, showAssigned]);
+  return complaints.filter(
+    (c) =>
+      (showAssigned ? c.assigned_to : !c.assigned_to) && // assigned/unassigned
+      c.status !== "resolved" && // exclude resolved
+      c.title.toLowerCase().includes(searchTerm.toLowerCase()) // search
+  );
+}, [complaints, searchTerm, showAssigned]);
 
   // Sort
   const sortedComplaints = useMemo(() => {
@@ -84,7 +85,7 @@ const ManageComplaints = () => {
       {/* Fixed Header */}
       <div className="fixed top-0 left-0 w-full bg-rose-200 bg-opacity-70 z-10 py-4 flex items-center px-6">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate("/homepage")}
           className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
         >
           <ArrowLeft size={24} className="text-rose-700" />
