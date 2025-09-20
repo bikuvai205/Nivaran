@@ -8,33 +8,57 @@ const Notifications = ({ token, citizenId }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    // fetch existing notifications
+    // Fetch existing notifications
     const fetchNotifications = async () => {
       try {
         const res = await axios.get("http://localhost:5000/api/notifications", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        setNotifications(res.data);
+        setNotifications(res.data.reverse()); // newest first
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching notifications:", err);
       }
     };
+
     fetchNotifications();
 
-    // connect socket
+    // Connect to Socket.IO
     const newSocket = io("http://localhost:5000");
     setSocket(newSocket);
 
-    // join user-specific room
-    newSocket.emit("join", citizenId);
+    // Join user-specific room
+    if (citizenId) newSocket.emit("join", citizenId);
 
-    // listen for new notifications
-    newSocket.on("newNotification", (notif) => {
+    // Listen for new notifications
+    const handleNewNotification = (notif) => {
       setNotifications((prev) => [notif, ...prev]);
-    });
+    };
+    newSocket.on("newNotification", handleNewNotification);
 
-    return () => newSocket.disconnect();
+    // Cleanup on unmount
+    return () => {
+      newSocket.off("newNotification", handleNewNotification);
+      newSocket.disconnect();
+    };
   }, [token, citizenId]);
+
+  // Mark notification as read
+  const markAsRead = async (notifId) => {
+    try {
+      await axios.put(
+        `http://localhost:5000/api/notifications/${notifId}/read`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setNotifications((prev) =>
+        prev.map((n) =>
+          n._id === notifId ? { ...n, read: true } : n
+        )
+      );
+    } catch (err) {
+      console.error("Error marking notification as read:", err);
+    }
+  };
 
   return (
     <div className="p-4">
@@ -43,9 +67,18 @@ const Notifications = ({ token, citizenId }) => {
         <p>No notifications yet.</p>
       ) : (
         <ul className="space-y-2">
-          {notifications.map((n, index) => (
-            <li key={index} className="p-2 border rounded bg-rose-50">
-              {n.message}
+          {notifications.map((n) => (
+            <li
+              key={n._id}
+              className={`p-2 border rounded flex flex-col ${
+                n.read ? "bg-gray-100" : "bg-rose-50"
+              } cursor-pointer`}
+              onClick={() => !n.read && markAsRead(n._id)}
+            >
+              <span>{n.message}</span>
+              <span className="text-xs text-gray-500 mt-1">
+                {new Date(n.createdAt).toLocaleString()}
+              </span>
             </li>
           ))}
         </ul>
