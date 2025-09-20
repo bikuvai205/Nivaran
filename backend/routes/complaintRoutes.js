@@ -48,7 +48,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     // Create a notification for the user
     const notification = new Notification({
       user: req.user._id,
-      message: `Your complaint "${title}" has been submitted successfully.`,
+      message: `Your complaint "${title}" has been posted successfully. Visit your feed for further details.`,
       complaint: complaint._id,
       type: "submitted",
     });
@@ -56,7 +56,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
 
     if (req.io) {
       req.io.to(complaint.user.toString()).emit("newNotification", {
-        message: `Your complaint "${complaint.title}" has been submitted successfully.`,
+        message: `Your complaint "${complaint.title}" has been posted successfully. Visit your feed for further details.`,
         complaintId: complaint._id,
       });
     }
@@ -219,7 +219,6 @@ router.get("/admin", adminAuthMiddleware, async (req, res) => {
           }
         : null,
     }));
-    // console.log(formatted);
     res.json(formatted);
   } catch (err) {
     console.error("Error fetching complaints (admin):", err);
@@ -341,14 +340,14 @@ router.post("/assign", adminAuthMiddleware, async (req, res) => {
     // Create notification for user
     const notification = new Notification({
       user: complaint.user,
-      message: `Your complaint "${complaint.title}" has been assigned to an authority.`,
+      message: `Your complaint "${complaint.title}" has been assigned to an authority. Stay updated for any news from authority.`,
       complaint: complaint._id,
       type: "assigned",
     });
 
     if (req.io) {
       req.io.to(complaint.user.toString()).emit("newNotification", {
-        message: `Your complaint "${complaint.title}" has been assigned to an authority.`,
+        message: `Your complaint "${complaint.title}" has been assigned to an authority. Stay updated for any news from authority.`,
         complaintId: complaint._id,
       });
     }
@@ -394,14 +393,14 @@ router.post("/:id/accept", protectAuthority, async (req, res) => {
     // Notification for user
     const notification = new Notification({
       user: complaint.user,
-      message: `Your complaint "${complaint.title}" is now being addressed by the authority.`,
+      message: `Your complaint "${complaint.title}" has been accepted by authority and is in progress. Stay updated for more news.`,
       complaint: complaint._id,
       type: "inprogress",
     });
     await notification.save();
     if (req.io) {
       req.io.to(complaint.user.toString()).emit("newNotification", {
-        message: `Your complaint "${complaint.title}" is now being addressed by the authority.`,
+        message: `Your complaint "${complaint.title}" has been accepted by authority and is in progress. Stay updated for more news.`,
         complaintId: complaint._id,
       });
     }
@@ -449,14 +448,14 @@ router.post("/:id/reject", protectAuthority, async (req, res) => {
     // Notification for user
     const notification = new Notification({
       user: complaint.user,
-      message: `Your complaint "${complaint.title}" assignment has been rejected by the authority and is now pending.`,
+      message: `Unfortunately your complaint "${complaint.title}" has been rejected by the assigned authority. We are reassigning the task to ensure prompt attention.`,
       complaint: complaint._id,
       type: "rejected",
     });
     await notification.save();
     if (req.io) {
       req.io.to(complaint.user.toString()).emit("newNotification", {
-        message: `Your complaint "${complaint.title}" assignment has been rejected by the authority and is now pending.`,
+        message: `Unfortunately your complaint "${complaint.title}" has been rejected by the assigned authority. We are reassigning the task to ensure prompt attention.`,
         complaintId: complaint._id,
       });
     }
@@ -490,46 +489,6 @@ router.get("/assigned", protectAuthority, async (req, res) => {
   }
 });
 
-// -------------------- AUTHORITY: MARK AS RESOLVED --------------------
-// router.post("/:id/resolve", protectAuthority, async (req, res) => {
-//   try {
-//     const complaintId = req.params.id;
-//     const authorityId = req.authority._id;
-
-//     const complaint = await Complaint.findById(complaintId);
-//     const authority = await Authority.findById(authorityId);
-
-//     if (!complaint || !authority)
-//       return res
-//         .status(404)
-//         .json({ message: "Complaint or Authority not found" });
-
-//     if (
-//       !complaint.assigned_to ||
-//       complaint.assigned_to.toString() !== authorityId.toString()
-//     )
-//       return res
-//         .status(403)
-//         .json({ message: "You are not assigned to this complaint" });
-
-//     if (complaint.status !== "inprogress")
-//       return res
-//         .status(400)
-//         .json({ message: "Only in-progress complaints can be resolved" });
-
-//     complaint.status = "resolved";
-//     complaint.solvedAt = new Date();
-//     await complaint.save();
-
-//     authority.status = "free";
-//     await authority.save();
-
-//     res.json({ message: "Complaint marked as resolved.", complaint });
-//   } catch (err) {
-//     console.error("Error resolving complaint:", err);
-//     res.status(500).json({ message: "Failed to mark complaint as resolved" });
-//   }
-// });
 // -------------------- AUTHORITY: MARK AS RESOLVED --------------------
 router.post("/:id/resolve", protectAuthority, async (req, res) => {
   try {
@@ -569,14 +528,14 @@ router.post("/:id/resolve", protectAuthority, async (req, res) => {
     // Notification for user
     const notification = new Notification({
       user: complaint.user,
-      message: `Your complaint "${complaint.title}" has been resolved by the authority.`, 
+      message: `Your complaint "${complaint.title}" has been resolved successfully. Thank you for using Nivaran to make your community better!`,
       complaint: complaint._id,
       type: "resolved",
     });
     await notification.save();
     if (req.io) {
       req.io.to(complaint.user.toString()).emit("newNotification", {
-        message: `Your complaint "${complaint.title}" has been resolved by the authority.`,
+        message: `Your complaint "${complaint.title}" has been resolved successfully. Thank you for using Nivaran to make your community better!`,
         complaintId: complaint._id,
       });
     }
