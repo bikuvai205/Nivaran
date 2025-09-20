@@ -6,6 +6,7 @@ const path = require("path");
 const Complaint = require("../models/Complaint");
 const Authority = require("../models/authorities/Authority"); // ✅ authority model
 const Citizen = require("../models/Citizen"); // ✅ citizen model
+const Notification = require("../models/Notification"); // ✅ notification model
 
 const authMiddleware = require("../middleware/authMiddleware"); // citizen middleware
 const { adminAuthMiddleware } = require("../middleware/adminAuthMiddleware"); // admin middleware
@@ -43,6 +44,22 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     });
 
     await complaint.save();
+
+    // Create a notification for the user
+    const notification = new Notification({
+      user: req.user._id,
+      message: `Your complaint "${title}" has been submitted successfully.`,
+      complaint: complaint._id,
+      type: "submitted",
+    });
+    await notification.save();
+
+    if (req.io) {
+      req.io.to(complaint.user.toString()).emit("newNotification", {
+        message: `Your complaint "${complaint.title}" has been submitted successfully.`,
+        complaintId: complaint._id,
+      });
+    }
     res
       .status(201)
       .json({ message: "Complaint submitted successfully", complaint });
@@ -179,7 +196,6 @@ router.delete("/:id", authMiddleware, async (req, res) => {
   }
 });
 
-
 // -------------------- ADMIN: VIEW ALL COMPLAINTS --------------------
 router.get("/admin", adminAuthMiddleware, async (req, res) => {
   try {
@@ -272,10 +288,13 @@ router.get("/summary", async (req, res) => {
       { $group: { _id: "$status", count: { $sum: 1 } } },
     ]);
 
-    const statusCounts = statusAggregation.reduce((acc, curr) => {
-      acc[curr._id] = curr.count;
-      return acc;
-    }, { pending: 0, assigned: 0, inprogress: 0, resolved: 0 });
+    const statusCounts = statusAggregation.reduce(
+      (acc, curr) => {
+        acc[curr._id] = curr.count;
+        return acc;
+      },
+      { pending: 0, assigned: 0, inprogress: 0, resolved: 0 }
+    );
 
     res.json({ totalAuthorities, totalCitizens, totalTasks, statusCounts });
   } catch (err) {
@@ -314,11 +333,26 @@ router.post("/assign", adminAuthMiddleware, async (req, res) => {
 
     complaint.assigned_to = authorityId;
     complaint.status = "assigned";
-    complaint.assignedAt = new Date(); 
+    complaint.assignedAt = new Date();
     await complaint.save();
 
     authority.status = "assigned";
     await authority.save();
+    // Create notification for user
+    const notification = new Notification({
+      user: complaint.user,
+      message: `Your complaint "${complaint.title}" has been assigned to an authority.`,
+      complaint: complaint._id,
+      type: "assigned",
+    });
+
+    if (req.io) {
+      req.io.to(complaint.user.toString()).emit("newNotification", {
+        message: `Your complaint "${complaint.title}" has been assigned to an authority.`,
+        complaintId: complaint._id,
+      });
+    }
+    await notification.save();
 
     res.json({ message: "Authority assigned successfully", complaint });
   } catch (error) {
@@ -357,7 +391,20 @@ router.post("/:id/accept", protectAuthority, async (req, res) => {
 
     authority.status = "busy";
     await authority.save();
-
+    // Notification for user
+    const notification = new Notification({
+      user: complaint.user,
+      message: `Your complaint "${complaint.title}" is now being addressed by the authority.`,
+      complaint: complaint._id,
+      type: "inprogress",
+    });
+    await notification.save();
+    if (req.io) {
+      req.io.to(complaint.user.toString()).emit("newNotification", {
+        message: `Your complaint "${complaint.title}" is now being addressed by the authority.`,
+        complaintId: complaint._id,
+      });
+    }
     res.json({
       message: "Complaint accepted. Status updated to inprogress.",
       complaint,
@@ -399,7 +446,20 @@ router.post("/:id/reject", protectAuthority, async (req, res) => {
 
     authority.status = "free";
     await authority.save();
-
+    // Notification for user
+    const notification = new Notification({
+      user: complaint.user,
+      message: `Your complaint "${complaint.title}" assignment has been rejected by the authority and is now pending.`,
+      complaint: complaint._id,
+      type: "rejected",
+    });
+    await notification.save();
+    if (req.io) {
+      req.io.to(complaint.user.toString()).emit("newNotification", {
+        message: `Your complaint "${complaint.title}" assignment has been rejected by the authority and is now pending.`,
+        complaintId: complaint._id,
+      });
+    }
     res.json({
       message: "Complaint rejected. Authority is now free.",
       complaint,
@@ -421,7 +481,7 @@ router.get("/assigned", protectAuthority, async (req, res) => {
     const tasksWithTimestamps = tasks.map((t) => ({
       ...t.toObject(),
       assignedAt: t.assignedAt || null, // use assignedAt field
-      solvedAt: t.solvedAt || null,     // already stored in schema
+      solvedAt: t.solvedAt || null, // already stored in schema
     }));
 
     res.json(tasksWithTimestamps);
@@ -429,8 +489,6 @@ router.get("/assigned", protectAuthority, async (req, res) => {
     res.status(500).json({ message: "Failed to fetch assigned tasks" });
   }
 });
-
-
 
 // -------------------- AUTHORITY: MARK AS RESOLVED --------------------
 // router.post("/:id/resolve", protectAuthority, async (req, res) => {
@@ -482,16 +540,22 @@ router.post("/:id/resolve", protectAuthority, async (req, res) => {
     const authority = await Authority.findById(authorityId);
 
     if (!complaint || !authority)
-      return res.status(404).json({ message: "Complaint or Authority not found" });
+      return res
+        .status(404)
+        .json({ message: "Complaint or Authority not found" });
 
     if (
       !complaint.assigned_to ||
       complaint.assigned_to.toString() !== authorityId.toString()
     )
-      return res.status(403).json({ message: "You are not assigned to this complaint" });
+      return res
+        .status(403)
+        .json({ message: "You are not assigned to this complaint" });
 
     if (complaint.status !== "inprogress")
-      return res.status(400).json({ message: "Only in-progress complaints can be resolved" });
+      return res
+        .status(400)
+        .json({ message: "Only in-progress complaints can be resolved" });
 
     // Update status and save timestamp
     complaint.status = "resolved";
@@ -502,12 +566,25 @@ router.post("/:id/resolve", protectAuthority, async (req, res) => {
     authority.status = "free";
     await authority.save();
 
+    // Notification for user
+    const notification = new Notification({
+      user: complaint.user,
+      message: `Your complaint "${complaint.title}" has been resolved by the authority.`, 
+      complaint: complaint._id,
+      type: "resolved",
+    });
+    await notification.save();
+    if (req.io) {
+      req.io.to(complaint.user.toString()).emit("newNotification", {
+        message: `Your complaint "${complaint.title}" has been resolved by the authority.`,
+        complaintId: complaint._id,
+      });
+    }
     res.json({ message: "Complaint marked as resolved.", complaint });
   } catch (err) {
     console.error("Error resolving complaint:", err);
     res.status(500).json({ message: "Failed to mark complaint as resolved" });
   }
 });
-
 
 module.exports = router;

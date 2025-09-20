@@ -17,6 +17,7 @@ import ComplaintFeed from "./ComplaintFeed";
 import MyComplaints from "./MyComplaints";
 import CitizenDashboardHome from "./CitizenDashboardHome";
 import CitizenSetting from "./CitizenSetting";
+import Notifications from "./CitizenNotification";
 
 const CitizenDashboard = () => {
   const [citizen, setCitizen] = useState(null);
@@ -85,14 +86,7 @@ const CitizenDashboard = () => {
         return <MyComplaints citizen={citizen} token={token} />;
       case "notifications":
         return (
-          <div className="p-4 sm:p-6">
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-rose-600 mb-4 sm:mb-6">
-              Notifications
-            </h2>
-            <p className="text-gray-600 text-sm sm:text-base">
-              🔔 Here we’ll display updates about complaint progress.
-            </p>
-          </div>
+          <Notifications token={token} citizenId={citizen._id} />
         );
       case "settings":
         return <CitizenSetting token={token} />;
