@@ -7,19 +7,78 @@ const Complaint = require("../models/Complaint");
 const Authority = require("../models/authorities/Authority"); // ✅ authority model
 const Citizen = require("../models/Citizen"); // ✅ citizen model
 const Notification = require("../models/Notification"); // ✅ notification model
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const cloudinary = require("../config/cloudinary");
 
 const authMiddleware = require("../middleware/authMiddleware"); // citizen middleware
 const { adminAuthMiddleware } = require("../middleware/adminAuthMiddleware"); // admin middleware
 const protectAuthority = require("../middleware/authAuthority"); // authority middleware
 
-// -------------------- MULTER SETUP --------------------
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "uploads/complaints"),
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
-    cb(null, uniqueSuffix + path.extname(file.originalname));
+// // -------------------- MULTER SETUP --------------------
+// const storage = multer.diskStorage({
+//   destination: (req, file, cb) => cb(null, "uploads/complaints"),
+//   filename: (req, file, cb) => {
+//     const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+//     cb(null, uniqueSuffix + path.extname(file.originalname));
+//   },
+// });
+// const upload = multer({ storage });
+
+// // -------------------- CREATE COMPLAINT --------------------
+// router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
+//   try {
+//     const { title, description, severity, anonymous, location, complaintType } =
+//       req.body;
+//     const image = req.file ? req.file.filename : null;
+
+//     const complaint = new Complaint({
+//       user: req.user._id,
+//       title,
+//       description,
+//       severity,
+//       location,
+//       anonymous: anonymous === "true",
+//       image,
+//       complaintType,
+//       upvotes: 0,
+//       downvotes: 0,
+//       status: "pending",
+//     });
+
+//     await complaint.save();
+
+    // Create a notification for the user
+//     const notification = new Notification({
+//       user: req.user._id,
+//       message: `Your complaint "${title}" has been posted successfully. Visit your feed for further details.`,
+//       complaint: complaint._id,
+//       type: "submitted",
+//     });
+//     await notification.save();
+
+//     if (req.io) {
+//       req.io.to(complaint.user.toString()).emit("newNotification", {
+//         message: `Your complaint "${complaint.title}" has been posted successfully. Visit your feed for further details.`,
+//         complaintId: complaint._id,
+//       });
+//     }
+//     res
+//       .status(201)
+//       .json({ message: "Complaint submitted successfully", complaint });
+//   } catch (error) {
+//     console.error("Error creating complaint:", error);
+//     res.status(500).json({ message: "Failed to submit complaint" });
+//   }
+// });
+// -------------------- CLOUDINARY MULTER SETUP --------------------
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder: "nivaran_complaints", // Cloudinary folder
+    allowed_formats: ["jpg", "jpeg", "png", "webp"],
   },
 });
+
 const upload = multer({ storage });
 
 // -------------------- CREATE COMPLAINT --------------------
@@ -27,7 +86,9 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
   try {
     const { title, description, severity, anonymous, location, complaintType } =
       req.body;
-    const image = req.file ? req.file.filename : null;
+
+    // Cloudinary gives `req.file.path` = secure URL
+    const image = req.file ? req.file.path : null;
 
     const complaint = new Complaint({
       user: req.user._id,
@@ -36,7 +97,7 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
       severity,
       location,
       anonymous: anonymous === "true",
-      image,
+      image, // store URL instead of filename
       complaintType,
       upvotes: 0,
       downvotes: 0,
@@ -54,12 +115,14 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     });
     await notification.save();
 
+    // Emit socket notification
     if (req.io) {
       req.io.to(complaint.user.toString()).emit("newNotification", {
         message: `Your complaint "${complaint.title}" has been posted successfully. Visit your feed for further details.`,
         complaintId: complaint._id,
       });
     }
+
     res
       .status(201)
       .json({ message: "Complaint submitted successfully", complaint });
@@ -68,7 +131,6 @@ router.post("/", authMiddleware, upload.single("image"), async (req, res) => {
     res.status(500).json({ message: "Failed to submit complaint" });
   }
 });
-
 // -------------------- GET PENDING COMPLAINTS --------------------
 router.get("/pending", authMiddleware, async (req, res) => {
   try {

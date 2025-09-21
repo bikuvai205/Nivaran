@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { MapPin, LogOut, X, Inbox, ClipboardCheck, FileClock } from "lucide-react";
+import { MapPin, LogOut, X, Inbox, ClipboardCheck, FileClock, Menu } from "lucide-react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -17,6 +17,7 @@ const AuthorityDashboard = () => {
     message: "",
     onConfirm: null,
   });
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const token = localStorage.getItem("authorityToken");
   const navigate = useNavigate();
@@ -151,7 +152,7 @@ const AuthorityDashboard = () => {
         <p className="text-gray-700">{task.description}</p>
         {task.image && (
           <img
-            src={`http://localhost:5000/uploads/complaints/${task.image}`}
+            src={task.image}
             alt={task.title}
             className="mt-3 rounded-lg max-h-64 object-contain"
           />
@@ -197,11 +198,74 @@ const AuthorityDashboard = () => {
     </div>
   );
 
+  // NavButton component for mobile view
+  const NavButton = ({ icon: Icon, label, tabKey }) => (
+    <button
+      onClick={() => {
+        setActiveTab(tabKey);
+        setMobileMenuOpen(false);
+      }}
+      className={`flex items-center justify-center w-full p-2 rounded-xl font-semibold text-sm transition-all duration-300 ${
+        activeTab === tabKey
+          ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md"
+          : "text-rose-600 hover:bg-rose-100 hover:text-rose-700"
+      }`}
+    >
+      <Icon size={18} />
+    </button>
+  );
+
   return (
     <div className="h-screen flex flex-col bg-rose-50">
       <Toaster />
-      {/* Top Nav */}
-      <div className="fixed top-0 left-0 w-full bg-gradient-to-r from-rose-100 via-rose-50 to-rose-200 z-20 py-4 px-6 shadow-md flex justify-between items-center">
+      {/* Mobile Navbar */}
+      <nav className="md:hidden fixed top-0 left-0 right-0 bg-gradient-to-r from-rose-100 via-rose-50 to-rose-200 z-30 py-4 px-4 shadow-md">
+        <div className="flex items-center justify-between">
+          {/* Left: User Info and Navigation Icons */}
+          <div className="flex items-center space-x-2">
+            <div>
+              <p className="font-semibold text-rose-700 text-sm">{authority.username}</p>
+              <p className="text-xs text-gray-600">{authority.email}</p>
+            </div>
+            <div className="flex space-x-2">
+              <NavButton icon={Inbox} label="Incoming Tasks" tabKey="incoming" />
+              <NavButton icon={ClipboardCheck} label="Update Accepted" tabKey="update" />
+              <NavButton icon={FileClock} label="Logs" tabKey="logs" />
+            </div>
+          </div>
+
+          {/* Right: Hamburger Menu */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 text-rose-600 hover:text-rose-800"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Dropdown for Logout */}
+        {mobileMenuOpen && (
+          <div className="bg-white shadow-lg p-4 mt-2 rounded-xl">
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() =>
+                  confirmAction("Are you sure you want to logout?", () => {
+                    localStorage.removeItem("authorityToken");
+                    navigate("/", { replace: true });
+                    setMobileMenuOpen(false);
+                  })
+                }
+                className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
+              >
+                <LogOut size={18} className="mr-2" /> Logout
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Desktop Top Nav */}
+      <div className="hidden md:flex fixed top-0 left-0 w-full bg-gradient-to-r from-rose-100 via-rose-50 to-rose-200 z-20 py-4 px-6 shadow-md justify-between items-center">
         <div>
           <p className="font-semibold text-rose-700">{authority.username}</p>
           <p className="text-sm text-gray-600">{authority.email}</p>
@@ -221,9 +285,9 @@ const AuthorityDashboard = () => {
         </button>
       </div>
 
-      <div className="flex mt-20 h-full">
-        {/* Sidebar */}
-        <div className="w-64 bg-white rounded-2xl p-5 shadow-lg border border-rose-100 h-[calc(100vh-5rem)] space-y-4 fixed">
+      <div className="flex mt-20 md:mt-20 h-full">
+        {/* Desktop Sidebar */}
+        <div className="hidden md:block w-64 bg-white rounded-2xl p-5 shadow-lg border border-rose-100 h-[calc(100vh-5rem)] space-y-4 fixed">
           {[
             { key: "incoming", label: "Incoming Tasks", icon: <Inbox size={18} /> },
             { key: "update", label: "Update Accepted", icon: <ClipboardCheck size={18} /> },
@@ -245,7 +309,7 @@ const AuthorityDashboard = () => {
         </div>
 
         {/* Main Content */}
-        <div className="ml-72 p-6 w-full overflow-y-auto max-h-[calc(100vh-5rem)] space-y-6">
+        <div className="w-full p-6 overflow-y-auto max-h-[calc(100vh-5rem)] space-y-6 md:ml-64 mt-16 md:mt-0">
           {activeTab === "incoming" &&
             (incomingTasks.length > 0 ? (
               <div className="space-y-6">
@@ -346,7 +410,7 @@ const AuthorityDashboard = () => {
                   <p className="text-rose-600 font-medium">Location: {viewingLog.location}</p>
                   {viewingLog.image && (
                     <img
-                      src={`http://localhost:5000/uploads/complaints/${viewingLog.image}`}
+                      src={viewingLog.image}
                       alt={viewingLog.title}
                       className="mt-3 rounded-lg max-h-64 object-contain"
                     />
@@ -381,13 +445,13 @@ const AuthorityDashboard = () => {
                 </h3>
                 <div className="flex justify-end gap-4">
                   <button
-                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg shadow-sm hover:bg-gray-400 "
+                    className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg shadow-sm hover:bg-gray-400"
                     onClick={() => setConfirmModal({ ...confirmModal, visible: false })}
                   >
                     Cancel
                   </button>
                   <button
-                    className="px-4 py-2 bg-rose-500 text-white rounded-lg shadow-sm hover:bg-rose-600 "
+                    className="px-4 py-2 bg-rose-500 text-white rounded-lg shadow-sm hover:bg-rose-600"
                     onClick={() => {
                       confirmModal.onConfirm();
                       setConfirmModal({ ...confirmModal, visible: false });

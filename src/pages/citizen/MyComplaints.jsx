@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { MapPin, ArrowUp, ArrowDown, Edit, Trash2 } from "lucide-react";
-import { motion } from "framer-motion";
 
 const MyComplaints = ({ citizen, token }) => {
   const [complaints, setComplaints] = useState([]);
@@ -150,7 +149,7 @@ const MyComplaints = ({ citizen, token }) => {
                 <p className="text-gray-700 text-base">{c.description}</p>
                 {c.image && (
                   <img
-                    src={`http://localhost:5000/uploads/complaints/${c.image}`}
+                    src={c.image}
                     alt="Complaint"
                     className="mt-4 rounded-xl max-h-48 sm:max-h-64 w-full object-contain border border-rose-200/50"
                   />
@@ -195,7 +194,7 @@ const MyComplaints = ({ citizen, token }) => {
                       </button>
                       <button
                         onClick={() => setDeletingComplaint(c)}
-                        className="text-red-600 hover:text-red-700 transition-all duration-200"
+                        className="text-rose-600 hover:text-rose-700 transition-all duration-200"
                       >
                         <Trash2 size={20} />
                       </button>
@@ -210,12 +209,7 @@ const MyComplaints = ({ citizen, token }) => {
 
       {/* Edit Modal */}
       {editingComplaint && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-        >
+        <div className="fixed inset-0 flex items-center justify-center bg-rose-100/50 backdrop-blur-sm z-50">
           <div className="bg-rose-100/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 w-full max-w-md sm:max-w-lg shadow-xl border border-rose-300/50">
             <h3 className="text-xl sm:text-2xl font-bold text-rose-600 mb-4">Edit Complaint</h3>
             {errorMsg && (
@@ -265,20 +259,15 @@ const MyComplaints = ({ citizen, token }) => {
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Delete Confirmation Modal */}
       {deletingComplaint && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50"
-        >
+        <div className="fixed inset-0 flex items-center justify-center bg-rose-100/50 backdrop-blur-sm z-50">
           <div className="bg-rose-100/30 backdrop-blur-md rounded-2xl p-6 sm:p-8 w-full max-w-md shadow-xl border border-rose-300/50">
-            <h3 className="text-xl sm:text-2xl font-bold text-red-600 mb-4">Delete Complaint</h3>
-            <p className="text-gray-700 text-base mb-6">
+            <h3 className="text-xl sm:text-2xl font-bold text-rose-600 mb-4">Delete Complaint</h3>
+            <p className="text-rose-700 text-base mb-6">
               Are you sure you want to delete <strong>{deletingComplaint.title}</strong>? This cannot be undone.
             </p>
             <div className="flex justify-end space-x-3">
@@ -292,14 +281,14 @@ const MyComplaints = ({ citizen, token }) => {
                 onClick={handleDeleteComplaint}
                 disabled={deleting}
                 className={`px-4 sm:px-5 py-2 rounded-xl font-semibold text-white text-base transition-all duration-200 ${
-                  deleting ? 'bg-red-300 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700 hover:shadow-md'
+                  deleting ? 'bg-rose-300 cursor-not-allowed' : 'bg-rose-600 hover:bg-rose-700 hover:shadow-md'
                 }`}
               >
                 {deleting ? "Deleting..." : "Delete"}
               </button>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
     </div>
   );

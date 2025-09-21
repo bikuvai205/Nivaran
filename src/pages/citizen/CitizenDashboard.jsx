@@ -94,10 +94,14 @@ const CitizenDashboard = () => {
         activeTab === tabKey
           ? "bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md"
           : "text-rose-600 hover:bg-rose-100 hover:text-rose-700"
+      } md:flex md:items-center md:w-full md:px-3 md:sm:px-4 md:py-2 md:sm:py-3 md:rounded-xl md:font-semibold md:text-sm md:sm:text-base md:transition-all md:duration-300 ${
+        activeTab === tabKey
+          ? "md:bg-gradient-to-r md:from-rose-500 md:to-pink-500 md:text-white md:shadow-md"
+          : "md:text-rose-600 md:hover:bg-rose-100 md:hover:text-rose-700"
       }`}
     >
-      <Icon size={18} className="mr-2 sm:mr-3" />
-      <span>{label}</span>
+      <Icon size={18} className="mr-2 sm:mr-3 md:mr-2 md:sm:mr-3" />
+      <span className="hidden md:inline">{label}</span>
     </button>
   );
 
@@ -117,7 +121,6 @@ const CitizenDashboard = () => {
       case "my":
         return <MyComplaints citizen={citizen} token={token} />;
       case "notifications":
-        // Only render Notifications if socket exists
         return socketRef.current ? (
           <Notifications
             token={token}
@@ -136,7 +139,62 @@ const CitizenDashboard = () => {
 
   return (
     <div className="flex min-h-screen w-full bg-gradient-to-br from-rose-50 via-white to-pink-50">
-      {/* Sidebar */}
+      {/* Mobile Navbar */}
+      <nav className="md:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-30">
+        <div className="flex items-center justify-between p-4">
+          {/* Left: User Info and Navigation Icons */}
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1 rounded-full shadow-md mr-3">
+                <User size={18} className="text-white" />
+              </div>
+              <span className="font-bold text-sm text-rose-700 truncate">
+                {citizen.fullName}
+              </span>
+            </div>
+            <div className="flex space-x-2">
+              <NavButton icon={LayoutDashboard} label="Dashboard" tabKey="dashboard" />
+              <NavButton icon={FileText} label="Feed" tabKey="feed" />
+              <NavButton icon={AlertCircle} label="Compose" tabKey="compose" />
+              <NavButton icon={FileText} label="My Complaints" tabKey="my" />
+              <NavButton icon={Bell} label="Notifications" tabKey="notifications" />
+            </div>
+          </div>
+
+          {/* Right: Hamburger Menu */}
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 text-rose-600 hover:text-rose-800"
+          >
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+
+        {/* Mobile Menu Dropdown for Settings and Logout */}
+        {mobileMenuOpen && (
+          <div className="bg-white shadow-lg p-4">
+            <div className="flex flex-col gap-2">
+              <button
+                onClick={() => {
+                  setActiveTab("settings");
+                  setMobileMenuOpen(false);
+                }}
+                className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
+              >
+                <Settings size={18} className="mr-2" /> Change Password
+              </button>
+              <button
+                onClick={handleLogout}
+                className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
+              >
+                <LogOut size={18} className="mr-2" /> Logout
+              </button>
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-60 sm:w-64 md:w-72 bg-white rounded-r-3xl shadow-lg p-4 sm:p-6 fixed top-0 left-0 h-screen space-y-4 sm:space-y-6 z-20">
         <div className="flex items-center mb-4 sm:mb-6">
           <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1 rounded-full shadow-md mr-3 sm:mr-4">
@@ -172,7 +230,7 @@ const CitizenDashboard = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8 lg:p-10 md:ml-72">
+      <main className="flex-1 overflow-auto p-4 sm:p-6 md:p-8 lg:p-10 md:ml-72 mt-16 md:mt-0">
         {renderTabContent()}
       </main>
     </div>

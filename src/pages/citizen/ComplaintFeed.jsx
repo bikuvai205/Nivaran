@@ -29,9 +29,7 @@ const ComplaintFeed = ({ citizen, token }) => {
             upvotes: c.upvotes,
             downvotes: c.downvotes,
             userVote: myVote,
-            image: c.image
-              ? `http://localhost:5000/uploads/complaints/${c.image}`
-              : null,
+             image: c.image || null,
           };
         });
 

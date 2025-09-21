@@ -16,7 +16,7 @@ export default function CreateAuthorities() {
   });
 
   const [showPwd, setShowPwd] = useState(false);
-  const [created, setCreated] = useState(null);
+  const [toast, setToast] = useState(null);
   const [error, setError] = useState("");
 
   const passwordValid = form.password.length >= 8;
@@ -33,22 +33,26 @@ export default function CreateAuthorities() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Updated handleSubmit to send username + phone too
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!isValid) return;
 
     try {
       const res = await axios.post("http://localhost:5000/api/authorities/register", {
-        name: form.officeName,   // office name stored as "name" in DB
-        username: form.username, // ✅ added
+        name: form.officeName,
+        username: form.username,
         email: form.email,
-        phone: form.phone,       // ✅ added
+        phone: form.phone,
         password: form.password,
         type: form.type,
       });
 
-      setCreated(res.data);
+      handleReset();
+      setToast({
+        message: `✅ ${res.data.authority?.name} (${res.data.authority?.username}) has been registered.`,
+        type: "success",
+      });
+      setTimeout(() => setToast(null), 4000);
       setError("");
     } catch (err) {
       console.error(err);
@@ -65,23 +69,31 @@ export default function CreateAuthorities() {
       username: "",
       password: "",
     });
-    setCreated(null);
     setError("");
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-rose-50 via-white to-rose-50 p-6 flex justify-center items-center">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8 border border-rose-100">
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={`fixed top-6 right-6 px-5 py-3 rounded-2xl text-white font-semibold text-base shadow-xl backdrop-blur-md border border-rose-300/50 z-50
+            ${toast.type === "success" ? "bg-rose-600/95" : "bg-red-600/95"}`}
+        >
+          {toast.message}
+        </div>
+      )}
 
-        {/* 🔙 Back Button */}
-      <button
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-lg p-8 border border-rose-100">
+        {/* Back Button */}
+        <button
           onClick={() => navigate("/homepage")}
           className="p-2 mr-4 rounded-full hover:bg-rose-300 transition"
         >
           <ArrowLeft size={24} className="text-rose-700" />
         </button>
 
-        {/* title */}
+        {/* Title */}
         <h1 className="text-3xl font-bold text-rose-700 mb-2">Create Authority</h1>
         <p className="text-gray-600 mb-6">
           Register a new authority. These credentials will be used for login.
@@ -90,7 +102,7 @@ export default function CreateAuthorities() {
         {error && <p className="text-rose-600 mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* authority type */}
+          {/* Authority Type */}
           <div>
             <label className="block text-sm font-medium mb-1">Authority Type *</label>
             <select
@@ -110,7 +122,7 @@ export default function CreateAuthorities() {
             </select>
           </div>
 
-          {/* office name */}
+          {/* Office Name */}
           <div>
             <label className="block text-sm font-medium mb-1">Unit Name *</label>
             <input
@@ -122,7 +134,7 @@ export default function CreateAuthorities() {
             />
           </div>
 
-          {/* email + phone */}
+          {/* Email + Phone */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Email *</label>
@@ -146,7 +158,7 @@ export default function CreateAuthorities() {
             </div>
           </div>
 
-          {/* username + password */}
+          {/* Username + Password */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium mb-1">Username *</label>
@@ -185,7 +197,7 @@ export default function CreateAuthorities() {
             </div>
           </div>
 
-          {/* buttons */}
+          {/* Buttons */}
           <div className="flex justify-between items-center">
             <button
               type="button"
@@ -203,16 +215,6 @@ export default function CreateAuthorities() {
             </button>
           </div>
         </form>
-
-        {/* success card */}
-        {created && (
-          <div className="mt-6 border rounded-xl p-4 bg-green-50 shadow-sm">
-            <h2 className="font-semibold text-green-700 mb-2">Authority Created</h2>
-            <p className="text-sm text-green-700">
-              ✅ {created.authority?.name} ({created.authority?.username}) has been registered.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -45,9 +45,8 @@ const AdminComplaintFeed = () => {
             : "Not Assigned",
           upvotes: c.upvotes,
           downvotes: c.downvotes,
-          image: c.image
-            ? `http://localhost:5000/uploads/complaints/${c.image}`
-            : null,
+          image: c.image|| null,
+           
           time: new Date(c.createdAt).toLocaleString(),
         }));
 

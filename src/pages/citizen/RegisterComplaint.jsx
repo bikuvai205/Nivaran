@@ -28,6 +28,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
   const [composerError, setComposerError] = useState('');
   const [nsfwModel, setNsfwModel] = useState(null);
   const [toast, setToast] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Load NSFW model
   useEffect(() => {
@@ -118,9 +119,15 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       setComposerError('Please fill all fields and ensure images are safe.');
       return;
     }
+
+    setIsSubmitting(true);
     try {
       const token = localStorage.getItem('citizenToken');
-      if (!token) { setComposerError('No token found. Please log in again.'); return; }
+      if (!token) {
+        setComposerError('No token found. Please log in again.');
+        setIsSubmitting(false);
+        return;
+      }
 
       const formData = new FormData();
       formData.append('title', title.trim());
@@ -139,11 +146,13 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       if (onSubmitSuccess) onSubmitSuccess(newComplaint);
 
       clearComposer();
+      setIsSubmitting(false);
       setToast({ message: 'Complaint submitted successfully!', type: 'success' });
       setTimeout(() => setToast(null), 4000);
     } catch (err) {
       console.error('Submit complaint error:', err);
       const message = err.response?.data?.message || 'Failed to submit complaint.';
+      setIsSubmitting(false);
       setToast({ message, type: 'error' });
       setTimeout(() => setToast(null), 4000);
     }
@@ -151,6 +160,13 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
 
   return (
     <div className="min-h-screen w-full p-4 sm:p-6 md:p-8 lg:p-10 bg-gradient-to-br from-rose-50/50 via-white to-pink-50/50">
+      {/* Full-Screen Loader */}
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-rose-100/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="w-10 h-10 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
+
       {/* Toast */}
       {toast && (
         <motion.div
@@ -321,10 +337,10 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
           </button>
           <button
             type="button"
-            disabled={!canSubmit}
+            disabled={!canSubmit || isSubmitting}
             onClick={handleSubmitComplaint}
             className={`px-5 sm:px-6 py-2.5 rounded-xl font-semibold text-white text-base transition-all duration-200 hover:shadow-md ${
-              canSubmit ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-300 cursor-not-allowed'
+              canSubmit && !isSubmitting ? 'bg-rose-600 hover:bg-rose-700' : 'bg-rose-300 cursor-not-allowed'
             }`}
           >
             Submit Complaint

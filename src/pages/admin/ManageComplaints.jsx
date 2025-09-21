@@ -234,7 +234,7 @@ const ManageComplaints = () => {
                     {c.image && (
                       <div className="flex justify-center bg-gray-50 rounded-xl overflow-hidden">
                         <img
-                          src={`http://localhost:5000/uploads/complaints/${c.image}`}
+                          src={c.image}
                           alt="Complaint"
                           className="max-h-[400px] w-auto object-contain"
                         />
