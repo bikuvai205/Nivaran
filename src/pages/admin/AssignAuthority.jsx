@@ -20,13 +20,13 @@ const AssignAuthority = () => {
   const fetchAuthorities = async () => {
     if (!token) return;
     try {
-      const authRes = await axios.get("http://localhost:5000/api/authorities", {
+      const authRes = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/authorities", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const authoritiesData = authRes.data || [];
 
       const complaintRes = await axios.get(
-        "http://localhost:5000/api/complaints/admin",
+        "https://nivaran-backend-zw9j.onrender.com/api/complaints/admin",
         { headers: { Authorization: `Bearer ${token}` } }
       );
       const complaints = complaintRes.data || [];
@@ -65,7 +65,7 @@ const AssignAuthority = () => {
   if (!complaintId) return;
   try {
     const res = await axios.post(
-      "http://localhost:5000/api/complaints/assign",
+      "https://nivaran-backend-zw9j.onrender.com/api/complaints/assign",
       { complaintId, authorityId },
       { headers: { Authorization: `Bearer ${token}` } }
     );

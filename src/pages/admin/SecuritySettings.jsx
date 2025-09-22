@@ -12,7 +12,7 @@ const SecuritySettings = () => {
   const handleChangePassword = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost:5000/admin/change-password', {
+      const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/admin/change-password', {
         adminId,
         currentPassword,
         newPassword,

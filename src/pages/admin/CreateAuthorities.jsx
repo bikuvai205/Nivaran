@@ -38,7 +38,7 @@ export default function CreateAuthorities() {
     if (!isValid) return;
 
     try {
-      const res = await axios.post("http://localhost:5000/api/authorities/register", {
+      const res = await axios.post("https://nivaran-backend-zw9j.onrender.com/api/authorities/register", {
         name: form.officeName,
         username: form.username,
         email: form.email,

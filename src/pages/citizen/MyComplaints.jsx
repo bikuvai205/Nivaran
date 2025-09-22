@@ -21,7 +21,7 @@ const MyComplaints = ({ citizen, token }) => {
     const fetchComplaints = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/complaints/mine", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/complaints/mine", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setComplaints(res.data || []);
@@ -60,7 +60,7 @@ const MyComplaints = ({ citizen, token }) => {
 
     try {
       const res = await axios.put(
-        `http://localhost:5000/api/complaints/${editingComplaint._id}`,
+        `https://nivaran-backend-zw9j.onrender.com/api/complaints/${editingComplaint._id}`,
         formData,
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -79,7 +79,7 @@ const MyComplaints = ({ citizen, token }) => {
     if (!deletingComplaint) return;
     setDeleting(true);
     try {
-      await axios.delete(`http://localhost:5000/api/complaints/${deletingComplaint._id}`, {
+      await axios.delete(`https://nivaran-backend-zw9j.onrender.com/api/complaints/${deletingComplaint._id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setComplaints((prev) => prev.filter((c) => c._id !== deletingComplaint._id));

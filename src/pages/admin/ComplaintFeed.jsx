@@ -26,7 +26,7 @@ const AdminComplaintFeed = () => {
       try {
         setLoading(true);
         const token = localStorage.getItem("adminToken");
-        const res = await axios.get("http://localhost:5000/api/complaints/admin", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/complaints/admin", {
           headers: { Authorization: `Bearer ${token}` },
         });
 

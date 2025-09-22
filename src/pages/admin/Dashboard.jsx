@@ -56,7 +56,7 @@ const AdminDashboardHome = () => {
     setLoadingSummary(true);
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/admin/dashboard/summary",
+        "https://nivaran-backend-zw9j.onrender.com/api/admin/dashboard/summary",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -76,7 +76,7 @@ const AdminDashboardHome = () => {
     setLoadingStatus(true);
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/complaints/status-count",
+        "https://nivaran-backend-zw9j.onrender.com/api/complaints/status-count",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -109,7 +109,7 @@ const AdminDashboardHome = () => {
     setLoadingCategory(true);
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/admin/dashboard/complaints-by-category",
+        "https://nivaran-backend-zw9j.onrender.com/api/admin/dashboard/complaints-by-category",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -134,7 +134,7 @@ const AdminDashboardHome = () => {
     setLoadingTrend(true);
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/admin/dashboard/complaints-per-day",
+        "https://nivaran-backend-zw9j.onrender.com/api/admin/dashboard/complaints-per-day",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -154,7 +154,7 @@ const AdminDashboardHome = () => {
     setLoadingAuthority(true);
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/admin/dashboard/authority-performance",
+        "https://nivaran-backend-zw9j.onrender.com/api/admin/dashboard/authority-performance",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

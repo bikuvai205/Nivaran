@@ -138,7 +138,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
       formData.append('complaintType', complaintType);
       images.forEach(img => formData.append('image', img.file));
 
-      const res = await axios.post('http://localhost:5000/api/complaints', formData, {
+      const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/complaints', formData, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' }
       });
 
