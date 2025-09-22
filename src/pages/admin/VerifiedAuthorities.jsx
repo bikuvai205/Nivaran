@@ -15,7 +15,7 @@ const VerifiedAuthorities = () => {
   // Fetch authorities
   const fetchAuthorities = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/authorities");
+      const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/authorities");
       setAuthorities(res.data);
     } catch (error) {
       console.error("Fetch error:", error);
@@ -33,7 +33,7 @@ const VerifiedAuthorities = () => {
   const handleDelete = async (email) => {
     try {
       const encodedEmail = encodeURIComponent(email);
-      await axios.delete(`http://localhost:5000/api/authorities/email/${encodedEmail}`);
+      await axios.delete(`https://nivaran-backend-zw9j.onrender.com/api/authorities/email/${encodedEmail}`);
       setAuthorities((prev) => prev.filter((a) => a.email !== email));
       setToastMessage(`Authority ${email} deleted successfully!`);
       setConfirmDelete(null);
