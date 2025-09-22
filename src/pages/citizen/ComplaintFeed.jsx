@@ -9,7 +9,7 @@ const ComplaintFeed = ({ citizen, token }) => {
   useEffect(() => {
     const fetchComplaints = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/complaints/pending", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/complaints/pending", {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -76,7 +76,7 @@ const ComplaintFeed = ({ citizen, token }) => {
       const sendVote = currentComplaint.userVote === voteType ? 0 : voteType;
 
       const res = await axios.put(
-        `http://localhost:5000/api/complaints/${id}/vote`,
+        `https://nivaran-backend-zw9j.onrender.com/api/complaints/${id}/vote`,
         { voteType: sendVote },
         { headers: { Authorization: `Bearer ${token}` } }
       );
