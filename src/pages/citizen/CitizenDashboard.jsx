@@ -40,7 +40,7 @@ const CitizenDashboard = () => {
     const fetchCitizen = async () => {
       try {
         const res = await axios.get(
-          "http://localhost:5000/api/citizens/dashboard",
+          "https://nivaran-backend-zw9j.onrender.com/api/citizens/dashboard",
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setCitizen(res.data.citizen);
@@ -55,7 +55,7 @@ const CitizenDashboard = () => {
   // Initialize persistent socket
   useEffect(() => {
     if (!socketRef.current) {
-      socketRef.current = io("http://localhost:5000");
+      socketRef.current = io("https://nivaran-backend-zw9j.onrender.com");
 
       socketRef.current.on("connect", () => {
         console.log("Socket connected:", socketRef.current.id);
