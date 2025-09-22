@@ -20,7 +20,7 @@ const ManageComplaints = () => {
 
     const fetchData = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/complaints/admin", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/complaints/admin", {
           headers: { Authorization: `Bearer ${token}` },
         });
         console.log("Fetched complaints:", res.data);
