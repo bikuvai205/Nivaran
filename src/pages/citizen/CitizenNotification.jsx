@@ -12,7 +12,7 @@ const Notifications = ({ token, citizenId, socket }) => {
     const fetchNotifications = async () => {
       try {
         setLoading(true);
-        const res = await axios.get("http://localhost:5000/api/notifications", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/notifications", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setNotifications(res.data);
@@ -41,7 +41,7 @@ const Notifications = ({ token, citizenId, socket }) => {
   const markAsRead = async (notifId) => {
     try {
       await axios.put(
-        `http://localhost:5000/api/notifications/${notifId}/read`,
+        `https://nivaran-backend-zw9j.onrender.com/api/notifications/${notifId}/read`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -56,7 +56,7 @@ const Notifications = ({ token, citizenId, socket }) => {
   // Delete notification
   const deleteNotification = async (notifId) => {
     try {
-      await axios.delete(`http://localhost:5000/api/notifications/${notifId}`, {
+      await axios.delete(`https://nivaran-backend-zw9j.onrender.com/api/notifications/${notifId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setNotifications((prev) => prev.filter((n) => n._id !== notifId));
