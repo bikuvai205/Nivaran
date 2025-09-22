@@ -22,26 +22,35 @@ import { io } from "socket.io-client";
 
 const CitizenDashboard = () => {
   const [citizen, setCitizen] = useState(null);
+  const [tokenLoaded, setTokenLoaded] = useState(false);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
   const socketRef = useRef(null);
-  const token = localStorage.getItem("citizenToken");
+  const tokenRef = useRef(null);
   const navigate = useNavigate();
 
-  // Fetch citizen info
+  // Safely load token after component mounts
   useEffect(() => {
-    if (!token) {
+    const storedToken = localStorage.getItem("citizenToken");
+    if (!storedToken) {
       navigate("/");
       return;
     }
+    tokenRef.current = storedToken;
+    setTokenLoaded(true);
+  }, [navigate]);
+
+  // Fetch citizen info after token is loaded
+  useEffect(() => {
+    if (!tokenLoaded) return;
 
     const fetchCitizen = async () => {
       try {
         const res = await axios.get(
           "https://nivaran-backend-zw9j.onrender.com/api/citizens/dashboard",
-          { headers: { Authorization: `Bearer ${token}` } }
+          { headers: { Authorization: `Bearer ${tokenRef.current}` } }
         );
         setCitizen(res.data.citizen);
       } catch (err) {
@@ -50,38 +59,34 @@ const CitizenDashboard = () => {
     };
 
     fetchCitizen();
-  }, [token, navigate]);
+  }, [tokenLoaded]);
 
-  // Initialize persistent socket
+  // Initialize socket after citizen is loaded
   useEffect(() => {
+    if (!citizen?._id) return;
+
     if (!socketRef.current) {
       socketRef.current = io("https://nivaran-backend-zw9j.onrender.com");
 
       socketRef.current.on("connect", () => {
         console.log("Socket connected:", socketRef.current.id);
-        if (citizen?._id) socketRef.current.emit("join", citizen._id);
+        socketRef.current.emit("join", citizen._id);
       });
 
       socketRef.current.on("disconnect", () => {
         console.log("Socket disconnected");
       });
-    }
-
-    // Join room when citizen is loaded
-    if (citizen?._id && socketRef.current.connected) {
+    } else if (socketRef.current.connected) {
       socketRef.current.emit("join", citizen._id);
     }
 
-    // Cleanup on unmount
     return () => {
-      if (socketRef.current) {
-        socketRef.current.disconnect();
-      }
+      if (socketRef.current) socketRef.current.disconnect();
     };
   }, [citizen]);
 
-  if (error)
-    return <p className="text-red-600 text-center mt-8">{error}</p>;
+  if (!tokenLoaded) return <p className="text-center mt-8">Loading...</p>;
+  if (error) return <p className="text-red-600 text-center mt-8">{error}</p>;
   if (!citizen) return <p className="text-center mt-8">Loading dashboard...</p>;
 
   const NavButton = ({ icon: Icon, label, tabKey }) => (
@@ -113,17 +118,17 @@ const CitizenDashboard = () => {
   const renderTabContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <CitizenDashboardHome token={token} />;
+        return <CitizenDashboardHome token={tokenRef.current} />;
       case "feed":
-        return <ComplaintFeed citizen={citizen} token={token} />;
+        return <ComplaintFeed citizen={citizen} token={tokenRef.current} />;
       case "compose":
         return <RegisterComplaint citizen={citizen} />;
       case "my":
-        return <MyComplaints citizen={citizen} token={token} />;
+        return <MyComplaints citizen={citizen} token={tokenRef.current} />;
       case "notifications":
         return socketRef.current ? (
           <Notifications
-            token={token}
+            token={tokenRef.current}
             citizenId={citizen._id}
             socket={socketRef.current}
           />
@@ -131,11 +136,14 @@ const CitizenDashboard = () => {
           <p className="text-center mt-8">Connecting...</p>
         );
       case "settings":
-        return <CitizenSetting token={token} />;
+        return <CitizenSetting token={tokenRef.current} />;
       default:
         return null;
     }
   };
+
+
+
 
 
   return (
