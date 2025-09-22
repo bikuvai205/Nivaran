@@ -27,7 +27,7 @@ const CitizenSetting = ({ token }) => {
     setLoading(true);
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/citizens/change-password",
+        "https://nivaran-backend-zw9j.onrender.com/api/citizens/change-password",
         { currentPassword, newPassword },
         { headers: { Authorization: `Bearer ${token}` } }
       );
