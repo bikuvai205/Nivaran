@@ -137,64 +137,70 @@ const CitizenDashboard = () => {
     }
   };
 
+
   return (
     <div className="flex min-h-screen w-full bg-gradient-to-br from-rose-50 via-white to-pink-50">
       {/* Mobile Navbar */}
-      <nav className="md:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-30">
-        <div className="flex items-center justify-between p-4">
-          {/* Left: User Info and Navigation Icons */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1 rounded-full shadow-md mr-3">
-                <User size={18} className="text-white" />
-              </div>
-              <span className="font-bold text-sm text-rose-700 truncate">
-                {citizen.fullName}
-              </span>
-            </div>
-            <div className="flex space-x-2">
-              <NavButton icon={LayoutDashboard} label="Dashboard" tabKey="dashboard" />
-              <NavButton icon={FileText} label="Feed" tabKey="feed" />
-              <NavButton icon={AlertCircle} label="Compose" tabKey="compose" />
-              <NavButton icon={FileText} label="My Complaints" tabKey="my" />
-              <NavButton icon={Bell} label="Notifications" tabKey="notifications" />
-            </div>
-          </div>
+{/* Mobile Navbar */}
+<nav className="md:hidden fixed top-0 left-0 right-0 bg-white shadow-md z-30">
+  <div className="flex items-center justify-between p-4">
+    {/* Left: User Info */}
+    <div className="flex items-center space-x-2 sm:space-x-4">
+      <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1 rounded-full shadow-md">
+        <User size={18} className="text-white" />
+      </div>
+      <span className="font-bold text-sm text-rose-700 truncate sm:text-base">
+        {citizen.fullName}
+      </span>
+    </div>
 
-          {/* Right: Hamburger Menu */}
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-rose-600 hover:text-rose-800"
-          >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-          </button>
-        </div>
+    {/* Right: Hamburger Menu */}
+    <button
+      onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+      className="p-2 text-rose-600 hover:text-rose-800"
+    >
+      {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+    </button>
+  </div>
 
-        {/* Mobile Menu Dropdown for Settings and Logout */}
-        {mobileMenuOpen && (
-          <div className="bg-white shadow-lg p-4">
-            <div className="flex flex-col gap-2">
-              <button
-                onClick={() => {
-                  setActiveTab("settings");
-                  setMobileMenuOpen(false);
-                }}
-                className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
-              >
-                <Settings size={18} className="mr-2" /> Change Password
-              </button>
-              <button
-                onClick={handleLogout}
-                className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
-              >
-                <LogOut size={18} className="mr-2" /> Logout
-              </button>
-            </div>
-          </div>
-        )}
-      </nav>
+  {/* Horizontal Navigation Icons */}
+ 
+<div className="flex justify-center space-x-3 px-2 pb-2">
+  <NavButton icon={LayoutDashboard} label="Dashboard" tabKey="dashboard" small />
+  <NavButton icon={FileText} label="Feed" tabKey="feed" small />
+  <NavButton icon={AlertCircle} label="Compose" tabKey="compose" small />
+  <NavButton icon={FileText} label="My Complaints" tabKey="my" small />
+  <NavButton icon={Bell} label="Notifications" tabKey="notifications" small />
+</div>
 
-      {/* Desktop Sidebar */}
+
+  {/* Mobile Menu Dropdown for Settings and Logout */}
+  {mobileMenuOpen && (
+    <div className="bg-white shadow-lg p-4">
+      <div className="flex flex-col gap-2">
+        <button
+          onClick={() => {
+            setActiveTab("settings");
+            setMobileMenuOpen(false);
+          }}
+          className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
+        >
+          <Settings size={18} className="mr-2" /> Change Password
+        </button>
+        <button
+          onClick={handleLogout}
+          className="flex items-center w-full px-3 py-2 rounded-xl text-rose-700 hover:bg-rose-100 hover:text-rose-800 font-semibold text-sm transition-all duration-300"
+        >
+          <LogOut size={18} className="mr-2" /> Logout
+        </button>
+      </div>
+    </div>
+  )}
+</nav>
+
+
+
+      {/* Desktop Sidebar (unchanged) */}
       <aside className="hidden md:flex flex-col w-60 sm:w-64 md:w-72 bg-white rounded-r-3xl shadow-lg p-4 sm:p-6 fixed top-0 left-0 h-screen space-y-4 sm:space-y-6 z-20">
         <div className="flex items-center mb-4 sm:mb-6">
           <div className="bg-gradient-to-tr from-rose-400 to-pink-500 p-1 rounded-full shadow-md mr-3 sm:mr-4">
@@ -206,11 +212,41 @@ const CitizenDashboard = () => {
         </div>
 
         <div className="flex flex-col gap-2 sm:gap-3">
-          <NavButton icon={LayoutDashboard} label="Dashboard" tabKey="dashboard" />
-          <NavButton icon={FileText} label="Complaint Feed" tabKey="feed" />
-          <NavButton icon={AlertCircle} label="Register Complaint" tabKey="compose" />
-          <NavButton icon={FileText} label="My Complaints" tabKey="my" />
-          <NavButton icon={Bell} label="Notifications" tabKey="notifications" />
+          <NavButton
+            icon={LayoutDashboard}
+            label="Dashboard"
+            tabKey="dashboard"
+            active={activeTab === "dashboard"}
+            onClick={setActiveTab}
+          />
+          <NavButton
+            icon={FileText}
+            label="Complaint Feed"
+            tabKey="feed"
+            active={activeTab === "feed"}
+            onClick={setActiveTab}
+          />
+          <NavButton
+            icon={AlertCircle}
+            label="Register Complaint"
+            tabKey="compose"
+            active={activeTab === "compose"}
+            onClick={setActiveTab}
+          />
+          <NavButton
+            icon={FileText}
+            label="My Complaints"
+            tabKey="my"
+            active={activeTab === "my"}
+            onClick={setActiveTab}
+          />
+          <NavButton
+            icon={Bell}
+            label="Notifications"
+            tabKey="notifications"
+            active={activeTab === "notifications"}
+            onClick={setActiveTab}
+          />
         </div>
 
         <div className="mt-auto flex flex-col gap-2 sm:gap-3">
@@ -235,6 +271,7 @@ const CitizenDashboard = () => {
       </main>
     </div>
   );
+
 };
 
 export default CitizenDashboard;

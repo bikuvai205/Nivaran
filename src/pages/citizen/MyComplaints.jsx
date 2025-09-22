@@ -93,7 +93,7 @@ const MyComplaints = ({ citizen, token }) => {
 
   return (
     <div className="min-h-screen w-full p-4 sm:p-6 md:p-8 lg:p-10 bg-gradient-to-br from-rose-50/50 via-white to-pink-50/50">
-      <h2 className="text-3xl sm:text-4xl font-extrabold text-rose-600 mb-8 border-b-2 border-rose-300/50 pb-3 backdrop-blur-sm">
+      <h2 className="text-3xl sm:text-4xl mt-[15px] font-extrabold text-rose-600 mb-8 border-b-2 border-rose-300/50 pb-3 backdrop-blur-sm">
         My Complaints
       </h2>
 

@@ -92,7 +92,7 @@ const Notifications = ({ token, citizenId, socket }) => {
 
   return (
     <div className="min-h-screen p-4 sm:p-6 md:p-8 lg:p-10 bg-gradient-to-br from-rose-50/50 via-white to-pink-50/50 space-y-8">
-      <h2 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-rose-600 mb-6 border-b-2 border-rose-200/50 pb-3 backdrop-blur-sm">
+      <h2 className="text-2xl sm:text-3xl mt-[15px] md:text-4xl font-extrabold text-rose-600 mb-6 border-b-2 border-rose-200/50 pb-3 backdrop-blur-sm">
         Notifications
       </h2>
 

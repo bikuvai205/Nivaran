@@ -180,7 +180,7 @@ const RegisterComplaint = ({ citizen, onSubmitSuccess }) => {
         </motion.div>
       )}
 
-      <h2 className="text-3xl sm:text-4xl font-extrabold text-rose-600 mb-8 border-b-2 border-rose-300/50 pb-3 backdrop-blur-sm">
+      <h2 className="text-3xl sm:text-4xl mt-[20px] font-extrabold text-rose-600 mb-8 border-b-2 border-rose-300/50 pb-3 backdrop-blur-sm">
         Register a Complaint
       </h2>
       <div className="bg-rose-100/30 backdrop-blur-md shadow-xl rounded-2xl p-6 sm:p-8 md:p-10 border border-rose-300/50 space-y-8">
