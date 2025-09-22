@@ -15,7 +15,7 @@ const ManageCitizens = () => {
   useEffect(() => {
     const fetchCitizens = async () => {
       try {
-        const res = await axios.get("http://localhost:5000/api/citizens");
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/citizens");
         setCitizens(res.data);
       } catch (error) {
         console.error("Error fetching citizens:", error);
@@ -31,7 +31,7 @@ const ManageCitizens = () => {
   const handleDelete = async (email) => {
     try {
       const encodedEmail = encodeURIComponent(email);
-      await axios.delete(`http://localhost:5000/api/citizens/email/${encodedEmail}`);
+      await axios.delete(`https://nivaran-backend-zw9j.onrender.com/api/citizens/email/${encodedEmail}`);
       setCitizens((prev) => prev.filter((c) => c.email !== email));
       setToastMessage(`Citizen ${email} deleted successfully!`);
       setConfirmDelete(null);
