@@ -27,7 +27,7 @@ const LoginPage = () => {
 
     try {
       if (role === 'admin') {
-        const res = await axios.post('http://localhost:5000/admin/login', {
+        const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/admin/login', {
           adminId,
           password,
         });
@@ -66,7 +66,7 @@ const LoginPage = () => {
           });
         }
       } else if (role === 'authority') {
-        const res = await axios.post('http://localhost:5000/api/authorities/login', {
+        const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/authorities/login', {
           email,
           password,
         });
@@ -111,7 +111,7 @@ const LoginPage = () => {
             }
             setLoading(true); // Start loader
             try {
-              const res = await axios.post('http://localhost:5000/api/citizens/register', {
+              const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/register', {
                 fullName,
                 email,
                 password,
@@ -158,7 +158,7 @@ const LoginPage = () => {
             }
             setLoading(true); // Start loader for OTP verification
             try {
-              await axios.post('http://localhost:5000/api/citizens/verify-otp', { email, otp });
+              await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/verify-otp', { email, otp });
               setLoading(false); // Stop loader
               toast.success('Email verified! Logging you in...', {
                 duration: 4000,
@@ -178,7 +178,7 @@ const LoginPage = () => {
               // Auto-login with the same credentials
               setTimeout(async () => {
                 try {
-                  const loginRes = await axios.post('http://localhost:5000/api/citizens/login', {
+                  const loginRes = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/login', {
                     email,
                     password,
                   });
@@ -242,7 +242,7 @@ const LoginPage = () => {
             return;
           }
           const res = await axios.post(
-            'http://localhost:5000/api/citizens/login',
+            'https://nivaran-backend-zw9j.onrender.com/api/citizens/login',
             { email, password },
             { headers: { 'Content-Type': 'application/json' } }
           );
