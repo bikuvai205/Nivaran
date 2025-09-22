@@ -32,7 +32,7 @@ const AuthorityDashboard = () => {
     const fetchAuthority = async () => {
       if (!token) return;
       try {
-        const res = await axios.get("http://localhost:5000/api/authorities/me", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/authorities/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setAuthority({
@@ -52,7 +52,7 @@ const AuthorityDashboard = () => {
     const fetchTasks = async () => {
       if (!token) return;
       try {
-        const res = await axios.get("http://localhost:5000/api/complaints/assigned", {
+        const res = await axios.get("https://nivaran-backend-zw9j.onrender.com/api/complaints/assigned", {
           headers: { Authorization: `Bearer ${token}` },
         });
         const allTasks = res.data || [];
@@ -70,7 +70,7 @@ const AuthorityDashboard = () => {
   const handleAcceptConfirmed = async (complaintId) => {
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/complaints/${complaintId}/accept`,
+        `https://nivaran-backend-zw9j.onrender.com/api/complaints/${complaintId}/accept`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -90,7 +90,7 @@ const AuthorityDashboard = () => {
   const handleRejectConfirmed = async (complaintId) => {
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/complaints/${complaintId}/reject`,
+        `https://nivaran-backend-zw9j.onrender.com/api/complaints/${complaintId}/reject`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -107,7 +107,7 @@ const AuthorityDashboard = () => {
   const handleResolveConfirmed = async (complaintId) => {
     try {
       const res = await axios.post(
-        `http://localhost:5000/api/complaints/${complaintId}/resolve`,
+        `https://nivaran-backend-zw9j.onrender.com/api/complaints/${complaintId}/resolve`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
