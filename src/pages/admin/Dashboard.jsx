@@ -203,7 +203,7 @@ const AdminDashboardHome = () => {
       </h2>
 
       {/* SUMMARY CARDS */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {loadingSummary ? (
           <div className="col-span-full flex justify-center items-center h-32">
             <Loader2 className="w-10 h-10 animate-spin text-rose-500" />

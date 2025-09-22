@@ -6,7 +6,6 @@ import toast, { Toaster } from 'react-hot-toast';
 import logo from "../assets/images/logo.png"; // your image path
 import { ArrowLeft } from 'lucide-react';
 
-
 const LoginPage = () => {
   const navigate = useNavigate();
 
@@ -19,11 +18,12 @@ const LoginPage = () => {
   const [fullName, setFullName] = useState('');
   const [otp, setOtp] = useState('');
   const [otpSent, setOtpSent] = useState(false);
-  const [loading, setLoading] = useState(false); // New loading state
+  const [loading, setLoading] = useState(false);
 
   // Handle login/registration
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true); // Start loader for all scenarios
 
     try {
       if (role === 'admin') {
@@ -50,20 +50,7 @@ const LoginPage = () => {
           });
           navigate('/homepage');
         } else {
-          toast.error('Login failed. Please try again.', {
-            duration: 4000,
-            position: 'top-right',
-            style: {
-              background: 'rgba(255, 228, 230, 0.3)',
-              backdropFilter: 'blur(8px)',
-              border: '1px solid rgba(254, 205, 211, 0.5)',
-              borderRadius: '12px',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-              color: '#be123c',
-              padding: '12px 24px',
-              margin: '8px',
-            },
-          });
+          throw new Error('Login failed');
         }
       } else if (role === 'authority') {
         const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/authorities/login', {
@@ -107,36 +94,31 @@ const LoginPage = () => {
                   margin: '8px',
                 },
               });
+              setLoading(false);
               return;
             }
-            setLoading(true); // Start loader
-            try {
-              const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/register', {
-                fullName,
-                email,
-                password,
-              });
-              setLoading(false); // Stop loader
-              toast.success('OTP sent to your email. Please verify.', {
-                duration: 4000,
-                position: 'top-right',
-                style: {
-                  background: 'rgba(255, 228, 230, 0.3)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(254, 205, 211, 0.5)',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  color: '#be123c',
-                  padding: '12px 24px',
-                  margin: '8px',
-                },
-              });
-              setOtpSent(true);
-              return;
-            } catch (err) {
-              setLoading(false); // Stop loader on error
-              throw err; // Re-throw to handle in catch block
-            }
+            const res = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/register', {
+              fullName,
+              email,
+              password,
+            });
+            toast.success('OTP sent to your email. Please verify.', {
+              duration: 4000,
+              position: 'top-right',
+              style: {
+                background: 'rgba(255, 228, 230, 0.3)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(254, 205, 211, 0.5)',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                color: '#be123c',
+                padding: '12px 24px',
+                margin: '8px',
+              },
+            });
+            setOtpSent(true);
+            setLoading(false);
+            return;
           } else {
             // Step 2: Verify OTP
             if (!otp) {
@@ -154,73 +136,68 @@ const LoginPage = () => {
                   margin: '8px',
                 },
               });
+              setLoading(false);
               return;
             }
-            setLoading(true); // Start loader for OTP verification
-            try {
-              await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/verify-otp', { email, otp });
-              setLoading(false); // Stop loader
-              toast.success('Email verified! Logging you in...', {
-                duration: 4000,
-                position: 'top-right',
-                style: {
-                  background: 'rgba(255, 228, 230, 0.3)',
-                  backdropFilter: 'blur(8px)',
-                  border: '1px solid rgba(254, 205, 211, 0.5)',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                  color: '#be123c',
-                  padding: '12px 24px',
-                  margin: '8px',
-                },
-              });
+            await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/verify-otp', { email, otp });
+            toast.success('Email verified! Logging you in...', {
+              duration: 4000,
+              position: 'top-right',
+              style: {
+                background: 'rgba(255, 228, 230, 0.3)',
+                backdropFilter: 'blur(8px)',
+                border: '1px solid rgba(254, 205, 211, 0.5)',
+                borderRadius: '12px',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                color: '#be123c',
+                padding: '12px 24px',
+                margin: '8px',
+              },
+            });
 
-              // Auto-login with the same credentials
-              setTimeout(async () => {
-                try {
-                  const loginRes = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/login', {
-                    email,
-                    password,
-                  });
-                  localStorage.setItem('citizenToken', loginRes.data.token);
-                  toast.success(loginRes.data.message, {
-                    duration: 4000,
-                    position: 'top-right',
-                    style: {
-                      background: 'rgba(255, 228, 230, 0.3)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(254, 205, 211, 0.5)',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                      color: '#be123c',
-                      padding: '12px 24px',
-                      margin: '8px',
-                    },
-                  });
-                  navigate('/citizen/dashboard');
-                } catch (loginErr) {
-                  console.error('Auto-login failed:', loginErr);
-                  toast.error('Auto-login failed. Please login manually.', {
-                    duration: 4000,
-                    position: 'top-right',
-                    style: {
-                      background: 'rgba(255, 228, 230, 0.3)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(254, 205, 211, 0.5)',
-                      borderRadius: '12px',
-                      boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-                      color: '#be123c',
-                      padding: '12px 24px',
-                      margin: '8px',
-                    },
-                  });
-                  setOtpSent(false); // Allow retry
-                }
-              }, 1000); // 1 second delay
-            } catch (err) {
-              setLoading(false); // Stop loader on error
-              throw err; // Re-throw to handle in catch block
-            }
+            // Auto-login with the same credentials
+            setTimeout(async () => {
+              try {
+                const loginRes = await axios.post('https://nivaran-backend-zw9j.onrender.com/api/citizens/login', {
+                  email,
+                  password,
+                });
+                localStorage.setItem('citizenToken', loginRes.data.token);
+                toast.success(loginRes.data.message, {
+                  duration: 4000,
+                  position: 'top-right',
+                  style: {
+                    background: 'rgba(255, 228, 230, 0.3)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(254, 205, 211, 0.5)',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    color: '#be123c',
+                    padding: '12px 24px',
+                    margin: '8px',
+                  },
+                });
+                navigate('/citizen/dashboard');
+              } catch (loginErr) {
+                console.error('Auto-login failed:', loginErr);
+                toast.error('Auto-login failed. Please login manually.', {
+                  duration: 4000,
+                  position: 'top-right',
+                  style: {
+                    background: 'rgba(255, 228, 230, 0.3)',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(254, 205, 211, 0.5)',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+                    color: '#be123c',
+                    padding: '12px 24px',
+                    margin: '8px',
+                  },
+                });
+                setOtpSent(false); // Allow retry
+                setLoading(false);
+              }
+            }, 1000); // 1 second delay
           }
         } else {
           // Normal citizen login
@@ -239,6 +216,7 @@ const LoginPage = () => {
                 margin: '8px',
               },
             });
+            setLoading(false);
             return;
           }
           const res = await axios.post(
@@ -281,6 +259,7 @@ const LoginPage = () => {
         },
       });
     }
+    setLoading(false); // Stop loader after all scenarios
   };
 
   // Login form fields based on role
@@ -288,20 +267,20 @@ const LoginPage = () => {
     if (role === 'admin') {
       return (
         <>
-          <label className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">Admin ID</label>
+          <label className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">Admin ID</label>
           <input
             type="text"
             value={adminId}
             onChange={(e) => setAdminId(e.target.value)}
-            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
             autoComplete="off"
           />
-          <label className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">Password</label>
+          <label className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">Password</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
             autoComplete="off"
           />
         </>
@@ -309,7 +288,7 @@ const LoginPage = () => {
     } else {
       return (
         <>
-          <label htmlFor="email" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
+          <label htmlFor="email" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">
             Email
           </label>
           <input
@@ -317,10 +296,10 @@ const LoginPage = () => {
             id="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
             autoComplete="off"
           />
-          <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
+          <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">
             Password
           </label>
           <input
@@ -328,7 +307,7 @@ const LoginPage = () => {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
             autoComplete="off"
           />
         </>
@@ -341,13 +320,13 @@ const LoginPage = () => {
     if (otpSent) {
       return (
         <>
-          <label htmlFor="otp" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">Enter OTP</label>
+          <label htmlFor="otp" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">Enter OTP</label>
           <input
             type="text"
             id="otp"
             value={otp}
             onChange={(e) => setOtp(e.target.value)}
-            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+            className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
             autoComplete="off"
           />
         </>
@@ -355,7 +334,7 @@ const LoginPage = () => {
     }
     return (
       <>
-        <label htmlFor="fullName" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
+        <label htmlFor="fullName" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">
           Full Name
         </label>
         <input
@@ -363,10 +342,10 @@ const LoginPage = () => {
           id="fullName"
           value={fullName}
           onChange={(e) => setFullName(e.target.value)}
-          className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+          className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
           autoComplete="off"
         />
-        <label htmlFor="email" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
+        <label htmlFor="email" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">
           Email
         </label>
         <input
@@ -374,10 +353,10 @@ const LoginPage = () => {
           id="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+          className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
           autoComplete="off"
         />
-        <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto">
+        <label htmlFor="password" className="block text-rose-700 mb-1 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base">
           Password
         </label>
         <input
@@ -385,7 +364,7 @@ const LoginPage = () => {
           id="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-md py-2 px-3 mb-4 bg-rose-50/50 backdrop-blur-sm focus:ring-2 focus:ring-rose-300"
+          className="w-11/12 sm:w-3/5 mx-auto border border-rose-200 rounded-xl py-2 px-3 mb-4 bg-white focus:ring-2 focus:ring-rose-400 text-sm md:text-base"
           autoComplete="off"
         />
       </>
@@ -393,8 +372,18 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen h-screen w-full flex flex-col lg:flex-row m-0 p-0 overflow-hidden">
+    <div className="min-h-screen h-screen w-full flex flex-col lg:flex-row m-0 p-0 overflow-hidden bg-gradient-to-br from-rose-50 to-pink-100">
       <Toaster />
+      {/* Loader */}
+      {loading && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-12 h-12 border-4 border-rose-700 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-rose-700 text-lg font-semibold">Processing...</p>
+          </div>
+        </div>
+      )}
+
       <div className="w-full h-full flex flex-col lg:flex-row">
         {/* Left Info Section with Background Image and Pink Overlay */}
         <div
@@ -436,7 +425,7 @@ const LoginPage = () => {
         </div>
 
         {/* Right Login/Register Form */}
-        <div className="w-full lg:w-1/2 h-[60vh] lg:h-full p-4 sm:p-6 md:p-8 lg:p-12 flex flex-col justify-center bg-rose-50/30 backdrop-blur-md relative">
+        <div className="w-full lg:w-1/2 h-[60vh] lg:h-full p-2 sm:p-4 md:p-6 lg:p-8 flex flex-col justify-center bg-rose-50/30 backdrop-blur-md relative">
           <div className="absolute inset-y-0 left-0 w-16 lg:w-24 bg-gradient-to-r from-pink-500/20 to-transparent z-10 hidden lg:block"></div>
           {/* Role Selector */}
           <div className="flex justify-center gap-2 sm:gap-4 mb-4 sm:mb-6">
@@ -454,7 +443,7 @@ const LoginPage = () => {
                   setOtp('');
                   setLoading(false);
                 }}
-                className={`px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition-all border border-rose-200 shadow-sm ${
+                className={`px-3 sm:px-4 py-1 sm:py-2 rounded-full text-xs sm:text-sm md:text-base font-medium transition-all border border-rose-200 shadow-sm ${
                   role === r ? 'bg-rose-500 text-white' : 'text-rose-700 hover:bg-rose-100/50'
                 }`}
               >
@@ -471,46 +460,38 @@ const LoginPage = () => {
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -100 }}
               transition={{ duration: 0.4 }}
-              className="w-full bg-rose-100/30 backdrop-blur-md rounded-xl py-4 sm:py-6 border border-rose-200 shadow-lg"
+              className="w-full bg-white rounded-xl py-4 sm:py-6 border border-rose-200 shadow-lg"
             >
               {registering && (
-  <div className="flex justify-start mb-2 px-4 sm:px-6">
-    <button
-      type="button"
-      onClick={() => {
-        setRegistering(false);
-        setOtpSent(false);
-        setFullName('');
-        setEmail('');
-        setPassword('');
-        setOtp('');
-      }}
-      className="p-2 rounded-full hover:bg-rose-300 transition-colors duration-300"
-    >
-      <ArrowLeft size={24} className="text-rose-700" />
-    </button>
-  </div>
-)}
+                <div className="flex justify-start mb-2 px-4 sm:px-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRegistering(false);
+                      setOtpSent(false);
+                      setFullName('');
+                      setEmail('');
+                      setPassword('');
+                      setOtp('');
+                    }}
+                    className="p-2 rounded-full hover:bg-rose-300 transition-colors duration-300"
+                  >
+                    <ArrowLeft size={20} className="text-rose-700" />
+                  </button>
+                </div>
+              )}
               <h1 className="text-lg sm:text-xl md:text-2xl font-semibold mb-4 sm:mb-6 text-center text-rose-700">
                 {registering ? (otpSent ? 'Verify OTP' : 'Citizen Registration') : `${role.charAt(0).toUpperCase() + role.slice(1)} Login`}
               </h1>
               <form onSubmit={handleSubmit} className="flex flex-col items-center">
-                {loading ? (
-                  <div className="w-11/12 sm:w-3/5 mx-auto flex justify-center items-center h-24">
-                    <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-rose-200"></div>
-                  </div>
-                ) : (
-                  registering ? renderRegisterFormFields() : renderLoginFormFields()
-                )}
-                {!loading && (
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className={`bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-md py-2 px-4 w-11/12 sm:w-3/5 mx-auto ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {registering ? (otpSent ? 'Verify OTP' : 'Register') : 'Login'}
-                  </button>
-                )}
+                {registering ? renderRegisterFormFields() : renderLoginFormFields()}
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className={`bg-rose-500 hover:bg-rose-600 text-white font-semibold rounded-xl py-2 px-4 w-11/12 sm:w-3/5 mx-auto text-sm md:text-base ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {registering ? (otpSent ? 'Verify OTP' : 'Register') : 'Login'}
+                </button>
               </form>
 
               {/* Toggle Registration */}
@@ -518,7 +499,7 @@ const LoginPage = () => {
                 {role === 'citizen' && !registering && !otpSent && (
                   <button
                     onClick={() => setRegistering(true)}
-                    className="hover:underline cursor-pointer bg-transparent border-none text-rose-600 font-semibold text-xs sm:text-sm"
+                    className="hover:underline cursor-pointer bg-transparent border-none text-rose-600 font-semibold text-xs sm:text-sm md:text-base"
                   >
                     Register as Citizen
                   </button>
@@ -528,6 +509,16 @@ const LoginPage = () => {
           </AnimatePresence>
         </div>
       </div>
+      <style>
+        {`
+          @keyframes spin {
+            to { transform: rotate(360deg); }
+          }
+          .animate-spin {
+            animation: spin 1s linear infinite;
+          }
+        `}
+      </style>
     </div>
   );
 };
